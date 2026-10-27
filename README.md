@@ -1,7 +1,10 @@
 # Mindmap Fullstack
 
 Mindmap để học, tra cứu, ghi chú và theo dõi mức hiểu kiến thức fullstack trong 24 tuần.
-App chạy trên claude.ai: https://claude.ai/artifact/4TNPENW2kRQLTwQ38LPK7Y (private, chỉ tài khoản của bạn mở được).
+App chạy ở hai nơi:
+
+- **claude.ai:** https://claude.ai/artifact/4TNPENW2kRQLTwQ38LPK7Y (private, chỉ tài khoản của bạn mở được). Dữ liệu học lưu trong kho dữ liệu của artifact, theo tài khoản.
+- **GitHub Pages:** https://nhatlam1111.github.io/fullstack-mindmap/ (công khai, tự build và deploy mỗi lần push lên `main`, xem `.github/workflows/pages.yml`). Dữ liệu học lưu trong `localStorage` của trình duyệt, riêng từng trình duyệt và từng thiết bị. Muốn chuyển dữ liệu từ nơi này sang nơi kia: mở "Dữ liệu học", xuất file sao lưu `.json` rồi nhập vào nơi còn lại.
 
 ## Thư mục
 

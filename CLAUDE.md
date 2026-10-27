@@ -1,6 +1,6 @@
 # Hướng dẫn cho Claude — Mindmap Fullstack
 
-Source của Lam nằm ở `D:\lam.nguyen\Projects\MindMap` trên máy Windows của Lam (thư mục kết nối qua app Claude desktop). Không có Git remote, không có Vercel.
+Source của Lam nằm ở `D:\lam.nguyen\Projects\MindMap` trên máy Windows của Lam (thư mục kết nối qua app Claude desktop). Bản sao nằm ở GitHub: https://github.com/nhatlam1111/fullstack-mindmap (nhánh `main`, công khai). Mỗi lần push, GitHub Actions (`.github/workflows/pages.yml`) build và deploy GitHub Pages tại https://nhatlam1111.github.io/fullstack-mindmap/ (dữ liệu học ở `localStorage`, tách biệt với artifact). Không có Vercel.
 App publish thành artifact private: https://claude.ai/artifact/4TNPENW2kRQLTwQ38LPK7Y (capabilities: db, user, downloads).
 
 ## Quy trình release
@@ -10,7 +10,7 @@ App publish thành artifact private: https://claude.ai/artifact/4TNPENW2kRQLTwQ3
 3. Publish `dist/artifact.html` vào đúng URL trên (đọc artifact trước nếu là phiên mới). Không truyền `capabilities` để giữ nguyên khai báo.
 4. Sau publish: đọc thử `data/users/me` bằng ArtifactData để chắc dữ liệu học vẫn còn.
 5. Ghi một dòng vào `releases.md`, chép `content/ids.lock` (build có thể ghi thêm id) và `dist/artifact.html`, `dist/release.json` vào `releases/last-good/` trên máy Lam.
-6. Chép source ngược về máy Lam: đóng gói thành file có tên theo thời gian, ví dụ `.sync/source-YYYYMMDDHHMMSS.tar.gz` (công cụ chép có thể gửi lại bản cũ nếu dùng lại cùng tên), commit file đó, rồi giải nén bằng shell thiết bị với `tar -xzf .sync/<file> --overwrite --no-same-owner --no-same-permissions` (thư mục không cho xóa file nên phải ghi đè tại chỗ). So md5 của hai bên để chắc khớp.
+6. Đẩy source lên GitHub: clone `nhatlam1111/fullstack-mindmap` (gắn bằng add_repo, quyền push), chép source đã đổi vào, commit, push `main`. Pages tự deploy. Rồi chép source ngược về máy Lam (hoặc để Lam `git pull`): đóng gói thành file có tên theo thời gian, ví dụ `.sync/source-YYYYMMDDHHMMSS.tar.gz` (công cụ chép có thể gửi lại bản cũ nếu dùng lại cùng tên), commit file đó, rồi giải nén bằng shell thiết bị với `tar -xzf .sync/<file> --overwrite --no-same-owner --no-same-permissions` (thư mục không cho xóa file nên phải ghi đè tại chỗ). So md5 của hai bên để chắc khớp.
 
 ## Quy tắc nội dung (bắt buộc)
 
