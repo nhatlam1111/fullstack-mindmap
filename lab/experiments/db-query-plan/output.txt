@@ -1,0 +1,195 @@
+# Query plan và EXPLAIN trên PostgreSQL
+Máy chủ: PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+Isolation mặc định: read committed
+Client: Node.js v22.22.0, driver pg 8.16.3
+Thời điểm chạy: 2026-10-16T07:03:17.886Z
+[app]    57ms  drop schema if exists exp_plan cascade
+[app]    59ms  NOTICE: drop cascades to 2 other objects
+   DETAIL: drop cascades to table exp_plan.requests
+drop cascades to table exp_plan.batch
+   [app] → DROP
+[app]   166ms  create schema exp_plan
+   [app] → CREATE
+[app]   167ms  set search_path = exp_plan, public
+   [app] → SET
+[app]   168ms  create table requests ( id bigint primary key, requester_id integer not null, department_id integer not null, status text not null, created_at timestamptz not null, title text not null)
+   [app] → CREATE
+[app]   171ms  insert into requests select g, 1 + (g::bigint * 7919) % 5000, 1 + ((g::bigint * 7919) % 5000) % 20, case when (g + g / 5000) % 20 = 0 then 'pending' when (g + g / 5000) % 4 = 0 then 'rejected' else 'approved' end, timestamptz '2024-01-01 00:00+07' + g * interval '1 minute', 'Yêu cầu số ' || g from generate_series(1, 1000000) g
+   [app] → INSERT 1000000
+[app]  2661ms  select count(*) as so_dong, count(distinct requester_id) as so_nguoi_gui, round(100.0 * count(*) filter (where status = 'pending') / count(*), 1) as pct_pending, round(100.0 * count(*) filter (where status = 'approved') / count(*), 1) as pct_approved, pg_size_pretty(pg_relation_size('requests')) as kich_thuoc_bang from requests
+   [app] →
+   so_dong | so_nguoi_gui | pct_pending | pct_approved | kich_thuoc_bang
+   --------+--------------+-------------+--------------+----------------
+   1000000 | 5000         | 5.0         | 75.0         | 88 MB          
+   (1 dòng)
+[app]  3179ms  create index requests_requester_idx on requests (requester_id)
+   [app] → CREATE
+[app]  3583ms  analyze requests
+   [app] → ANALYZE
+
+## 1. EXPLAIN chỉ ước tính; EXPLAIN ANALYZE chạy thật và cho số dòng thực tế
+[app]  3718ms  explain select id, status from requests where requester_id = 1234
+   [app] →
+   QUERY PLAN                                                                           
+   -------------------------------------------------------------------------------------
+   Bitmap Heap Scan on requests  (cost=5.97..721.60 rows=199 width=16)                  
+     Recheck Cond: (requester_id = 1234)                                                
+     ->  Bitmap Index Scan on requests_requester_idx  (cost=0.00..5.92 rows=199 width=0)
+           Index Cond: (requester_id = 1234)                                            
+   (4 dòng)
+[app]  3719ms  explain (analyze, timing off, summary off) select id, status from requests where requester_id = 1234
+   [app] →
+   QUERY PLAN                                                                                                     
+   ---------------------------------------------------------------------------------------------------------------
+   Bitmap Heap Scan on requests  (cost=5.97..721.60 rows=199 width=16) (actual rows=200 loops=1)                  
+     Recheck Cond: (requester_id = 1234)                                                                          
+     Heap Blocks: exact=200                                                                                       
+     ->  Bitmap Index Scan on requests_requester_idx  (cost=0.00..5.92 rows=199 width=0) (actual rows=200 loops=1)
+           Index Cond: (requester_id = 1234)                                                                      
+   (5 dòng)
+
+## 2. Hai cột tương quan: planner nhân xác suất và ước tính thiếu
+-- department_id của người gửi 1234 luôn là 14, nên điều kiện thứ hai không loại thêm dòng nào.
+[app]  3720ms  select count(*) from requests where requester_id = 1234 and department_id = 14
+   [app] →
+   count
+   -----
+   200  
+   (1 dòng)
+[app]  3722ms  explain (analyze, timing off, summary off) select id from requests where requester_id = 1234 and department_id = 14
+   [app] →
+   QUERY PLAN                                                                                                     
+   ---------------------------------------------------------------------------------------------------------------
+   Bitmap Heap Scan on requests  (cost=5.92..722.05 rows=10 width=8) (actual rows=200 loops=1)                    
+     Recheck Cond: (requester_id = 1234)                                                                          
+     Filter: (department_id = 14)                                                                                 
+     Heap Blocks: exact=200                                                                                       
+     ->  Bitmap Index Scan on requests_requester_idx  (cost=0.00..5.92 rows=199 width=0) (actual rows=200 loops=1)
+           Index Cond: (requester_id = 1234)                                                                      
+   (6 dòng)
+[app]  3723ms  create statistics requests_req_dep (dependencies) on requester_id, department_id from requests
+   [app] → CREATE
+[app]  3724ms  analyze requests
+   [app] → ANALYZE
+[app]  3904ms  explain (analyze, timing off, summary off) select id from requests where requester_id = 1234 and department_id = 14
+   [app] →
+   QUERY PLAN                                                                                                     
+   ---------------------------------------------------------------------------------------------------------------
+   Bitmap Heap Scan on requests  (cost=5.97..722.10 rows=199 width=8) (actual rows=200 loops=1)                   
+     Recheck Cond: (requester_id = 1234)                                                                          
+     Filter: (department_id = 14)                                                                                 
+     Heap Blocks: exact=200                                                                                       
+     ->  Bitmap Index Scan on requests_requester_idx  (cost=0.00..5.92 rows=199 width=0) (actual rows=200 loops=1)
+           Index Cond: (requester_id = 1234)                                                                      
+   (6 dòng)
+
+## 3. Thống kê cũ: dữ liệu đổi mà chưa ANALYZE
+[app]  3905ms  create table batch (id bigint, status text) with (autovacuum_enabled = off)
+   [app] → CREATE
+[app]  3910ms  insert into batch select g, 'pending' from generate_series(1, 1000) g
+   [app] → INSERT 1000
+[app]  3913ms  analyze batch
+   [app] → ANALYZE
+[app]  3915ms  insert into batch select g, 'approved' from generate_series(1001, 201000) g
+   [app] → INSERT 200000
+[app]  4091ms  explain (analyze, timing off, summary off) select count(*) from batch where status = 'approved'
+   [app] →
+   QUERY PLAN                                                                                              
+   --------------------------------------------------------------------------------------------------------
+   Aggregate  (cost=3848.73..3848.74 rows=1 width=8) (actual rows=1 loops=1)                               
+     ->  Gather  (cost=1000.00..3848.72 rows=1 width=0) (actual rows=200000 loops=1)                       
+           Workers Planned: 1                                                                              
+           Workers Launched: 1                                                                             
+           ->  Parallel Seq Scan on batch  (cost=0.00..2848.62 rows=1 width=0) (actual rows=100000 loops=2)
+                 Filter: (status = 'approved'::text)                                                       
+                 Rows Removed by Filter: 500                                                               
+   (7 dòng)
+-- Thống kê lấy lúc bảng chỉ có pending, nên planner gần như không tin có dòng approved.
+[app]  4123ms  analyze batch
+   [app] → ANALYZE
+[app]  4174ms  explain (analyze, timing off, summary off) select count(*) from batch where status = 'approved'
+   [app] →
+   QUERY PLAN                                                                                                         
+   -------------------------------------------------------------------------------------------------------------------
+   Finalize Aggregate  (cost=4052.47..4052.48 rows=1 width=8) (actual rows=1 loops=1)                                 
+     ->  Gather  (cost=4052.36..4052.47 rows=1 width=8) (actual rows=2 loops=1)                                       
+           Workers Planned: 1                                                                                         
+           Workers Launched: 1                                                                                        
+           ->  Partial Aggregate  (cost=3052.36..3052.37 rows=1 width=8) (actual rows=1 loops=2)                      
+                 ->  Parallel Seq Scan on batch  (cost=0.00..2757.94 rows=117766 width=0) (actual rows=100000 loops=2)
+                       Filter: (status = 'approved'::text)                                                            
+                       Rows Removed by Filter: 500                                                                    
+   (8 dòng)
+
+## 4. ORDER BY ... LIMIT: sắp xếp toàn bộ so với đọc index theo thứ tự
+[app]  4399ms  explain (analyze, buffers, timing off) select id, title from requests order by created_at desc limit 20
+   [app] →
+   QUERY PLAN                                                                                                              
+   ------------------------------------------------------------------------------------------------------------------------
+   Limit  (cost=27490.05..27492.38 rows=20 width=38) (actual rows=20 loops=1)                                              
+     Buffers: shared hit=11350                                                                                             
+     ->  Gather Merge  (cost=27490.05..124719.14 rows=833334 width=38) (actual rows=20 loops=1)                            
+           Workers Planned: 2                                                                                              
+           Workers Launched: 2                                                                                             
+           Buffers: shared hit=11350                                                                                       
+           ->  Sort  (cost=26490.03..27531.69 rows=416667 width=38) (actual rows=14 loops=3)                               
+                 Sort Key: created_at DESC                                                                                 
+                 Sort Method: top-N heapsort  Memory: 27kB                                                                 
+                 Buffers: shared hit=11350                                                                                 
+                 Worker 0:  Sort Method: top-N heapsort  Memory: 27kB                                                      
+                 Worker 1:  Sort Method: top-N heapsort  Memory: 27kB                                                      
+                 ->  Parallel Seq Scan on requests  (cost=0.00..15402.67 rows=416667 width=38) (actual rows=333333 loops=3)
+                       Buffers: shared hit=11236                                                                           
+   Planning Time: 0.069 ms                                                                                                 
+   Execution Time: 158.812 ms                                                                                              
+   (16 dòng)
+[app]  4559ms  create index requests_created_idx on requests (created_at)
+   [app] → CREATE
+[app]  4976ms  explain (analyze, buffers, timing off) select id, title from requests order by created_at desc limit 20
+   [app] →
+   QUERY PLAN                                                                                                                            
+   --------------------------------------------------------------------------------------------------------------------------------------
+   Limit  (cost=0.42..1.17 rows=20 width=38) (actual rows=20 loops=1)                                                                    
+     Buffers: shared hit=4                                                                                                               
+     ->  Index Scan Backward using requests_created_idx on requests  (cost=0.42..37219.43 rows=1000000 width=38) (actual rows=20 loops=1)
+           Buffers: shared hit=4                                                                                                         
+   Planning Time: 0.046 ms                                                                                                               
+   Execution Time: 0.024 ms                                                                                                              
+   (6 dòng)
+
+## 5. EXPLAIN ANALYZE chạy thật cả lệnh ghi: bọc trong transaction rồi rollback
+[app]  4976ms  select count(*) as pending from requests where status = 'pending'
+   [app] →
+   pending
+   -------
+   50000  
+   (1 dòng)
+[app]  5043ms  begin
+   [app] → BEGIN
+[app]  5043ms  explain (analyze, timing off, summary off) update requests set status = 'approved' where status = 'pending' and requester_id = 1234
+   [app] →
+   QUERY PLAN                                                                                                           
+   ---------------------------------------------------------------------------------------------------------------------
+   Update on requests  (cost=5.92..722.05 rows=0 width=0) (actual rows=0 loops=1)                                       
+     ->  Bitmap Heap Scan on requests  (cost=5.92..722.05 rows=11 width=38) (actual rows=10 loops=1)                    
+           Recheck Cond: (requester_id = 1234)                                                                          
+           Filter: (status = 'pending'::text)                                                                           
+           Rows Removed by Filter: 190                                                                                  
+           Heap Blocks: exact=200                                                                                       
+           ->  Bitmap Index Scan on requests_requester_idx  (cost=0.00..5.92 rows=199 width=0) (actual rows=200 loops=1)
+                 Index Cond: (requester_id = 1234)                                                                      
+   (8 dòng)
+[app]  5045ms  select count(*) as pending_trong_transaction from requests where status = 'pending'
+   [app] →
+   pending_trong_transaction
+   -------------------------
+   49990                    
+   (1 dòng)
+[app]  5102ms  rollback
+   [app] → ROLLBACK
+[app]  5103ms  select count(*) as pending_sau_rollback from requests where status = 'pending'
+   [app] →
+   pending_sau_rollback
+   --------------------
+   50000               
+   (1 dòng)

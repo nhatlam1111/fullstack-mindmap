@@ -1,0 +1,124 @@
+# Cây kiến thức: nhánh → nhóm. Chủ đề nằm trong content/topics/<nhánh>/<id>.md
+# id ổn định, không bao giờ đổi. Đổi tên thì sửa title.
+root:
+  id: root
+  title: Fullstack trong thời đại AI
+
+branches:
+  - id: web
+    title: Nền tảng web
+    volatility: slow
+    groups:
+      - id: web-network
+        title: Mạng và giao thức
+      - id: web-browser
+        title: Trình duyệt
+      - id: web-js
+        title: JavaScript runtime
+      - id: web-tooling
+        title: TypeScript và công cụ build
+
+  - id: fe
+    title: Frontend
+    volatility: slow
+    groups:
+      - id: fe-ui
+        title: HTML, CSS và accessibility
+      - id: fe-components
+        title: Component và state
+      - id: fe-data
+        title: Dữ liệu từ server
+      - id: fe-rendering
+        title: Chiến lược render và hiệu năng
+      - id: fe-quality
+        title: Form, validation và kiểm thử
+
+  - id: be
+    title: Backend và tích hợp
+    volatility: slow
+    groups:
+      - id: be-runtime
+        title: Runtime và xử lý đồng thời
+      - id: be-api
+        title: Vòng đời API
+      - id: be-auth
+        title: Xác thực và phân quyền
+      - id: be-async
+        title: Xử lý bất đồng bộ
+      - id: be-integration
+        title: Các kiểu tích hợp
+      - id: be-testing
+        title: Kiểm thử tích hợp
+
+  - id: db
+    title: Database và quản lý dữ liệu
+    volatility: slow
+    groups:
+      - id: db-foundations
+        title: Khái niệm nền tảng
+      - id: db-relational
+        title: Database quan hệ
+      - id: db-nosql
+        title: Các mô hình NoSQL
+      - id: db-storage
+        title: Lưu trữ và truy xuất
+      - id: db-workload
+        title: Workload và tìm kiếm
+      - id: db-distributed
+        title: Dữ liệu phân tán
+      - id: db-app
+        title: Ứng dụng sử dụng database
+      - id: db-ops
+        title: Vận hành và lựa chọn
+
+  - id: ops
+    title: Vận hành, bảo mật và kiến trúc
+    volatility: slow
+    groups:
+      - id: ops-git
+        title: Git và làm việc nhóm
+      - id: ops-delivery
+        title: Container và CI/CD
+      - id: ops-observability
+        title: Observability
+      - id: ops-security
+        title: Bảo mật
+      - id: ops-privacy
+        title: Bảo vệ dữ liệu cá nhân
+      - id: ops-architecture
+        title: Kiến trúc hệ thống
+
+  - id: ai
+    title: AI engineering
+    volatility: fast
+    groups:
+      - id: ai-llm
+        title: Nền tảng LLM
+      - id: ai-context
+        title: Context engineering
+      - id: ai-retrieval
+        title: Embedding và retrieval
+      - id: ai-agents
+        title: Tool calling và agent
+      - id: ai-production
+        title: Đưa AI vào sản phẩm
+
+  - id: aidev
+    title: Phát triển phần mềm cùng AI
+    volatility: fast
+    groups:
+      - id: aidev-specs
+        title: Giao việc cho coding agent
+      - id: aidev-review
+        title: Kiểm soát chất lượng
+      - id: aidev-safety
+        title: An toàn khi dùng agent
+
+  - id: learn
+    title: Phương pháp học và thực hành
+    volatility: stable
+    groups:
+      - id: learn-method
+        title: Cách học
+      - id: learn-practice
+        title: Thực hành

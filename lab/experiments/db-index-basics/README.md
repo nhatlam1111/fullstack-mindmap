@@ -1,0 +1,187 @@
+# Thử nghiệm: db-index-basics
+
+**Câu hỏi.** Index giúp truy vấn tìm theo người gửi bao nhiêu? Khi nào planner bỏ qua index? Mỗi index làm việc ghi chậm đi bao nhiêu?
+
+**Môi trường.** PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1), cài sẵn trong môi trường build Linux của Claude (2 nhân CPU, 8 GB RAM, `shared_buffers = 128MB`, `max_parallel_workers_per_gather = 2`, collation của database `C.UTF-8`); client Node.js v22.22.0 với driver `pg` 8.16.3. Chạy ngày 16/10/2026. Dữ liệu sinh bằng `lab/lib/requests-1m.mjs`: 1.000.000 yêu cầu, 5.000 người gửi (mỗi người 200 yêu cầu), 5% pending, 20% rejected, 75% approved.
+
+**Chạy lại.**
+
+```bash
+cd lab
+docker compose up -d postgres   # hoặc dùng PostgreSQL 16 có sẵn
+npm install
+node experiments/db-index-basics/run.mjs
+```
+
+**Kết luận từ kết quả dưới đây.**
+
+- Bảng 1.000.000 dòng chiếm 88 MB. Chưa có index, tìm 200 yêu cầu của người gửi 1234 dùng `Parallel Seq Scan` với 2 worker, mỗi tiến trình loại khoảng 333.267 dòng, đọc 11.236 trang (`shared hit=10682 read=554`), `Execution Time` 89,838 ms.
+- Tạo index trên `requester_id` mất 0,53 giây, index chiếm 6.728 kB. Cùng truy vấn chuyển sang `Bitmap Index Scan` rồi `Bitmap Heap Scan`: 3 trang index và 200 trang bảng (`Heap Blocks: exact=200`, `shared hit=203`), `Execution Time` 0,410 ms.
+- Index trên `status`: lọc `pending` (5% số dòng) dùng `Bitmap Heap Scan` nhưng vẫn đọc cả 11.236 trang bảng, vì dòng pending rải đều khắp bảng; lọc `approved` (75%) thì planner bỏ index, dùng `Parallel Seq Scan`.
+- Chèn 200.000 dòng, mỗi bảng 3 lần: bảng `w0` không index mất 240, 258, 204 ms; bảng `w4` có 4 index (khóa chính, `requester_id`, `status`, `created_at`) mất 1.422, 1.272, 1.322 ms. Sau lần chèn cuối, `w0` chiếm 18 MB, `w4` chiếm 30 MB trong đó 12 MB là index.
+- `pg_stat_user_indexes.idx_scan`: `requests_pkey` 6 (6 lệnh `insert ... where id <= 200000` ở bước 4 đọc qua khóa chính), `requests_requester_idx` 2, `requests_status_idx` 1.
+
+**Giới hạn của kết luận.**
+
+- Thời gian là một lần đo (bước 4 là ba lần) trên máy build dùng chung; chỉ so sánh tương đối giữa các bước trong cùng lần chạy. Số trang (`Buffers`) ổn định hơn thời gian.
+- Bước 1 đã chạy truy vấn một lần trước để làm nóng cache, nhưng vẫn còn 554 trang phải đọc từ ngoài shared buffers.
+- Dữ liệu sinh xác định, không phải dữ liệu thật; phân bố khác (ví dụ một người gửi chiếm nửa bảng) sẽ cho kế hoạch khác.
+- Lệnh `select pg_stat_force_next_flush()` được gọi trước khi đọc `pg_stat_user_indexes` vì thống kê tích lũy không cập nhật tức thì.
+
+## Kết quả thật
+
+Nguyên văn output của lần chạy (cũng lưu ở `output.txt`).
+
+```text
+# Index trên PostgreSQL: lợi ích và giá phải trả
+Máy chủ: PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+Isolation mặc định: read committed
+Client: Node.js v22.22.0, driver pg 8.16.3
+Thời điểm chạy: 2026-10-16T07:03:07.334Z
+[app]    52ms  drop schema if exists exp_idx cascade
+[app]    54ms  NOTICE: drop cascades to 3 other objects
+   DETAIL: drop cascades to table exp_idx.requests
+drop cascades to table exp_idx.w0
+drop cascades to table exp_idx.w4
+   [app] → DROP
+[app]   193ms  create schema exp_idx
+   [app] → CREATE
+[app]   195ms  set search_path = exp_idx, public
+   [app] → SET
+[app]   195ms  create table requests ( id bigint primary key, requester_id integer not null, department_id integer not null, status text not null, created_at timestamptz not null, title text not null)
+   [app] → CREATE
+[app]   200ms  insert into requests select g, 1 + (g::bigint * 7919) % 5000, 1 + ((g::bigint * 7919) % 5000) % 20, case when (g + g / 5000) % 20 = 0 then 'pending' when (g + g / 5000) % 4 = 0 then 'rejected' else 'approved' end, timestamptz '2024-01-01 00:00+07' + g * interval '1 minute', 'Yêu cầu số ' || g from generate_series(1, 1000000) g
+   [app] → INSERT 1000000
+[app]  3347ms  select count(*) as so_dong, count(distinct requester_id) as so_nguoi_gui, round(100.0 * count(*) filter (where status = 'pending') / count(*), 1) as pct_pending, round(100.0 * count(*) filter (where status = 'approved') / count(*), 1) as pct_approved, pg_size_pretty(pg_relation_size('requests')) as kich_thuoc_bang from requests
+   [app] →
+   so_dong | so_nguoi_gui | pct_pending | pct_approved | kich_thuoc_bang
+   --------+--------------+-------------+--------------+----------------
+   1000000 | 5000         | 5.0         | 75.0         | 88 MB          
+   (1 dòng)
+[app]  4010ms  analyze requests
+   [app] → ANALYZE
+
+## 1. Chưa có index trên requester_id
+-- Đã chạy truy vấn một lần trước để làm nóng cache, số liệu dưới là lần thứ hai.
+[app]  4269ms  explain (analyze, buffers, costs off, timing off) select id, status, created_at from requests where requester_id = 1234
+   [app] →
+   QUERY PLAN                                                  
+   ------------------------------------------------------------
+   Gather (actual rows=200 loops=1)                            
+     Workers Planned: 2                                        
+     Workers Launched: 2                                       
+     Buffers: shared hit=10682 read=554                        
+     ->  Parallel Seq Scan on requests (actual rows=67 loops=3)
+           Filter: (requester_id = 1234)                       
+           Rows Removed by Filter: 333267                      
+           Buffers: shared hit=10682 read=554                  
+   Planning Time: 0.071 ms                                     
+   Execution Time: 89.838 ms                                   
+   (10 dòng)
+
+## 2. Tạo index trên requester_id
+[app]  4363ms  create index requests_requester_idx on requests (requester_id)
+   [app] → CREATE
+-- thời gian tạo index: 0.53 giây
+[app]  4893ms  select pg_size_pretty(pg_relation_size('requests')) as bang, pg_size_pretty(pg_relation_size('requests_requester_idx')) as index_requester
+   [app] →
+   bang  | index_requester
+   ------+----------------
+   88 MB | 6728 kB        
+   (1 dòng)
+[app]  4897ms  explain (analyze, buffers, costs off, timing off) select id, status, created_at from requests where requester_id = 1234
+   [app] →
+   QUERY PLAN                                                                 
+   ---------------------------------------------------------------------------
+   Bitmap Heap Scan on requests (actual rows=200 loops=1)                     
+     Recheck Cond: (requester_id = 1234)                                      
+     Heap Blocks: exact=200                                                   
+     Buffers: shared hit=203                                                  
+     ->  Bitmap Index Scan on requests_requester_idx (actual rows=200 loops=1)
+           Index Cond: (requester_id = 1234)                                  
+           Buffers: shared hit=3                                              
+   Planning Time: 0.072 ms                                                    
+   Execution Time: 0.410 ms                                                   
+   (9 dòng)
+
+## 3. Index trên status: planner dùng hay bỏ tùy tỷ lệ dòng khớp
+[app]  4898ms  create index requests_status_idx on requests (status)
+   [app] → CREATE
+[app]  5343ms  analyze requests
+   [app] → ANALYZE
+[app]  5553ms  explain (analyze, buffers, costs off, timing off) select count(*) from requests where status = 'pending'
+   [app] →
+   QUERY PLAN                                                                      
+   --------------------------------------------------------------------------------
+   Aggregate (actual rows=1 loops=1)                                               
+     Buffers: shared hit=10842 read=439 written=110                                
+     ->  Bitmap Heap Scan on requests (actual rows=50000 loops=1)                  
+           Recheck Cond: (status = 'pending'::text)                                
+           Heap Blocks: exact=11236                                                
+           Buffers: shared hit=10842 read=439 written=110                          
+           ->  Bitmap Index Scan on requests_status_idx (actual rows=50000 loops=1)
+                 Index Cond: (status = 'pending'::text)                            
+                 Buffers: shared read=45                                           
+   Planning:                                                                       
+     Buffers: shared hit=14 read=2                                                 
+   Planning Time: 0.161 ms                                                         
+   Execution Time: 21.628 ms                                                       
+   (13 dòng)
+[app]  5576ms  explain (analyze, buffers, costs off, timing off) select count(*) from requests where status = 'approved'
+   [app] →
+   QUERY PLAN                                                                  
+   ----------------------------------------------------------------------------
+   Finalize Aggregate (actual rows=1 loops=1)                                  
+     Buffers: shared hit=11236                                                 
+     ->  Gather (actual rows=3 loops=1)                                        
+           Workers Planned: 2                                                  
+           Workers Launched: 2                                                 
+           Buffers: shared hit=11236                                           
+           ->  Partial Aggregate (actual rows=1 loops=3)                       
+                 Buffers: shared hit=11236                                     
+                 ->  Parallel Seq Scan on requests (actual rows=250000 loops=3)
+                       Filter: (status = 'approved'::text)                     
+                       Rows Removed by Filter: 83333                           
+                       Buffers: shared hit=11236                               
+   Planning Time: 0.076 ms                                                     
+   Execution Time: 78.560 ms                                                   
+   (14 dòng)
+
+## 4. Giá khi ghi: chèn 200.000 dòng vào bảng không có index và bảng có 4 index
+[app]  5655ms  create table w0 (like requests)
+   [app] → CREATE
+[app]  5659ms  create table w4 (like requests including indexes)
+   [app] → CREATE
+[app]  5664ms  create index on w4 (created_at)
+   [app] → CREATE
+[app]  5666ms  select tablename, count(*) as so_index from pg_indexes where schemaname = 'exp_idx' and tablename in ('w0', 'w4') group by tablename order by tablename
+   [app] →
+   tablename | so_index
+   ----------+---------
+   w4        | 4       
+   (1 dòng)
+-- lần 1, w0: 240 ms
+-- lần 1, w4: 1422 ms
+-- lần 2, w0: 258 ms
+-- lần 2, w4: 1272 ms
+-- lần 3, w0: 204 ms
+-- lần 3, w4: 1322 ms
+[app] 10450ms  select relname, pg_size_pretty(pg_total_relation_size(oid)) as tong_kich_thuoc, pg_size_pretty(pg_indexes_size(oid)) as cua_index from pg_class where relnamespace = 'exp_idx'::regnamespace and relname in ('w0', 'w4') order by relname
+   [app] →
+   relname | tong_kich_thuoc | cua_index
+   --------+-----------------+----------
+   w0      | 18 MB           | 0 bytes  
+   w4      | 30 MB           | 12 MB    
+   (2 dòng)
+
+## 5. Index nào thực sự được dùng
+[app] 10452ms  select indexrelname, idx_scan from pg_stat_user_indexes where schemaname = 'exp_idx' and relname = 'requests' order by indexrelname
+   [app] →
+   indexrelname           | idx_scan
+   -----------------------+---------
+   requests_pkey          | 6       
+   requests_requester_idx | 2       
+   requests_status_idx    | 1       
+   (3 dòng)
+-- idx_scan đếm số lần index được quét từ khi tạo; index có idx_scan = 0 qua thời gian dài là ứng viên để xóa.
+```

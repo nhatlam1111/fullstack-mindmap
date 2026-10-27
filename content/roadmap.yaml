@@ -1,0 +1,199 @@
+# Lộ trình 24 tuần, 6–8 giờ/tuần. Lộ trình chính thức, xây từ đầu (không có lộ trình cũ để đối chiếu).
+# Bài thực hành xuyên suốt: ứng dụng quản lý yêu cầu nội bộ (learn-practice-case).
+# Kỹ năng làm việc với coding agent được học sớm (tuần 1 và 4) vì bài thực hành có thể được viết cùng AI ngay từ đầu;
+# tuần 22–23 quay lại đào sâu khi đã có đủ kinh nghiệm thực tế.
+# Một chủ đề có thể nằm trong nhiều tuần; tuần của chủ đề được suy ra từ file này.
+phases:
+  - id: p1
+    title: Database và dữ liệu
+    weeks: [1, 2, 3, 4, 5, 6]
+  - id: p2
+    title: Nền tảng web
+    weeks: [7, 8, 9]
+  - id: p3
+    title: Frontend
+    weeks: [10, 11, 12]
+  - id: p4
+    title: Backend và tích hợp
+    weeks: [13, 14, 15]
+  - id: p5
+    title: Vận hành, bảo mật và kiến trúc
+    weeks: [16, 17, 18]
+  - id: p6
+    title: AI engineering
+    weeks: [19, 20, 21]
+  - id: p7
+    title: Phát triển phần mềm cùng AI
+    weeks: [22, 23]
+  - id: p8
+    title: Tổng hợp
+    weeks: [24]
+
+weeks:
+  - week: 1
+    title: Database, schema và mô hình quan hệ
+    goal: Phân biệt đúng các khái niệm nền tảng và thiết kế được schema có ràng buộc cho bài thực hành.
+    practice: Viết đặc tả ngắn cho ứng dụng quản lý yêu cầu nội bộ (vai trò, luồng gửi và duyệt yêu cầu), đủ rõ để giao cho một coding agent. Thiết kế schema gồm phòng ban, người dùng, yêu cầu, bình luận, lịch sử trạng thái; tạo trên PostgreSQL và Oracle với đủ primary key, foreign key, unique, check.
+    checkpoint: Schema chạy được trên cả hai database; giải thích được vì sao mỗi constraint tồn tại và vì sao bảng được tách như vậy.
+    topics: [learn-six-questions, learn-using-mindmap, learn-practice-case, learn-lab, aidev-writing-specs, db-database-dbms, db-sql-nosql-terms, db-schema-data-model, db-tables-keys-constraints, db-normalization, db-joins]
+
+  - week: 2
+    title: Transaction, isolation, MVCC và locking
+    goal: Hiểu cơ chế đọc ghi đồng thời và mức bảo đảm mà Oracle, PostgreSQL thực sự cung cấp.
+    practice: Trong lab, mở hai phiên song song để tái hiện lost update khi hai quản lý cùng duyệt một yêu cầu; chặn bằng SELECT ... FOR UPDATE và bằng cột version (optimistic locking). Ghi lại lệnh và kết quả thật.
+    checkpoint: Giải thích được khác biệt giữa Read Committed và Serializable trên Oracle và PostgreSQL; chỉ ra chỗ trong ứng dụng cần khóa.
+    topics: [db-transaction-acid, db-isolation-levels, db-mvcc, db-locking]
+
+  - week: 3
+    title: Index và query plan
+    goal: Đọc được kế hoạch thực thi và quyết định index dựa trên số đo.
+    practice: Sinh khoảng 1 triệu yêu cầu giả lập trong lab; đo các truy vấn danh sách theo người gửi, trạng thái và ngày tạo bằng EXPLAIN ANALYZE trước và sau khi thêm index. Ghi số đo thật.
+    checkpoint: Mỗi index trong schema có một truy vấn và một số đo giải thích lý do tồn tại.
+    topics: [db-index-basics, db-query-plan, db-btree, db-lsm-tree, db-access-patterns]
+
+  - week: 4
+    title: Ứng dụng nói chuyện với database
+    goal: Dùng kết nối, transaction và tham số đúng cách từ phía ứng dụng.
+    practice: Viết backend API đầu tiên cho bài thực hành (tạo, xem, duyệt yêu cầu) bằng ngôn ngữ bạn chọn; dùng connection pool, đặt transaction boundary ở tầng nghiệp vụ, bind variable cho mọi truy vấn; bật log SQL để tìm và sửa một lỗi N+1. Nếu dùng coding agent thì viết file hướng dẫn repo, viết test trước cho luồng duyệt yêu cầu, và review mọi diff của agent theo checklist.
+    checkpoint: API chạy được; chỉ ra được nơi mở và đóng transaction; không còn truy vấn ghép chuỗi.
+    topics: [db-drivers, db-connection-pool, db-transaction-boundary, db-orm, db-n-plus-one, db-timeouts, db-parameter-binding, aidev-repo-context, aidev-reviewing-ai-code, aidev-tests-as-guardrails]
+
+  - week: 5
+    title: NoSQL, workload và tìm kiếm
+    goal: Biết mỗi mô hình dữ liệu và loại workload hợp với truy vấn nào.
+    practice: Thêm Redis làm cache cho danh sách yêu cầu theo phòng ban, có hết hạn và vô hiệu hóa khi yêu cầu đổi trạng thái; thêm tìm kiếm toàn văn tiêu đề và nội dung yêu cầu bằng full-text search của PostgreSQL.
+    checkpoint: Giải thích được dữ liệu nào là nguồn sự thật, cache sai lệch tối đa bao lâu, và vì sao chọn full-text search của database thay vì công cụ riêng.
+    topics: [db-key-value, db-document, db-wide-column, db-graph, db-oltp-olap, db-row-column-store, db-time-series, db-full-text-search, db-cache-source-of-truth]
+
+  - week: 6
+    title: Dữ liệu phân tán và vận hành database
+    goal: Hiểu replication, consistency và vận hành database an toàn.
+    practice: Đưa schema vào migration có version; thử backup rồi restore sang một database mới và đo thời gian; viết một trang ghi chú lựa chọn database cho bài thực hành.
+    checkpoint: Restore thành công từ backup; trả lời được câu hỏi CAP mà không biến nó thành quy tắc chọn sản phẩm.
+    topics: [db-replication, db-partitioning-sharding, db-consistency-models, db-cap-pacelc, db-distributed-transactions, db-schema-migration, db-backup-restore, db-performance-monitoring, db-choosing, db-vector-search]
+
+  - week: 7
+    title: Vòng đời request và HTTP
+    goal: Mô tả được từng bước của một request web và ngữ nghĩa HTTP.
+    practice: Dùng curl -v và tab Network của DevTools để lần một request tới API của bài thực hành; đặt header cache phù hợp cho từng endpoint và kiểm lại bằng request thứ hai.
+    checkpoint: Giải thích được từng dòng của output curl -v; mỗi endpoint có chính sách cache có lý do.
+    topics: [web-request-lifecycle, web-dns, web-tcp-tls, web-http-semantics, web-http-versions, web-http-caching, web-cookies-cors, web-proxy]
+
+  - week: 8
+    title: Trình duyệt và JavaScript runtime
+    goal: Hiểu cách trình duyệt dựng trang và cách JavaScript chạy bất đồng bộ.
+    practice: Ghi một bản Performance trong DevTools cho một trang thật; viết script nhỏ chứng minh thứ tự chạy của task và microtask, ghi kết quả thật.
+    checkpoint: Dự đoán đúng thứ tự in ra của một đoạn code có setTimeout, Promise và await.
+    topics: [web-dom, web-rendering, web-browser-storage, web-event-loop, web-async, web-modules]
+
+  - week: 9
+    title: TypeScript và công cụ build
+    goal: Dùng TypeScript có chủ đích và hiểu bước build.
+    practice: Dựng frontend cho bài thực hành bằng Vite + React + TypeScript; định nghĩa kiểu cho dữ liệu API và kiểm tra lúc chạy ở ranh giới API.
+    checkpoint: Build production chạy được; giải thích được vì sao kiểu TypeScript không đủ để tin dữ liệu từ server.
+    topics: [web-typescript, web-bundling, web-package-managers]
+
+  - week: 10
+    title: HTML, CSS và accessibility
+    goal: Làm giao diện đúng ngữ nghĩa, responsive và dùng được bằng bàn phím.
+    practice: Làm màn hình danh sách và tạo yêu cầu; chạy axe và sửa hết lỗi nghiêm trọng; thao tác toàn bộ màn hình chỉ bằng bàn phím.
+    checkpoint: Không còn lỗi axe nghiêm trọng; màn hình dùng được ở 375px.
+    topics: [fe-semantic-html, fe-css-layout, fe-responsive, fe-accessibility]
+
+  - week: 11
+    title: Component, state và dữ liệu từ server
+    goal: Tổ chức state và dữ liệu từ server không lỗi race.
+    practice: Nối frontend với API; xử lý loading, error, empty; tái hiện rồi sửa lỗi kết quả lọc cũ ghi đè kết quả mới khi gõ nhanh.
+    checkpoint: Chỉ ra nguồn sự thật của từng phần state; lỗi race đã tái hiện được và đã sửa.
+    topics: [fe-component-model, fe-state-props, fe-rerender, fe-state-architecture, fe-data-fetching, fe-client-cache, fe-race-conditions]
+
+  - week: 12
+    title: Chiến lược render, form và kiểm thử. Rà soát giữa kỳ
+    goal: Chọn cách render phù hợp, làm form chắc chắn và viết test frontend.
+    practice: Hoàn thiện form tạo yêu cầu với validation ở cả client và server; viết test component và một test end-to-end; đo Core Web Vitals của trang danh sách.
+    checkpoint: Rà soát giữa kỳ — tiến độ, bài quá hạn ôn, điều chỉnh 12 tuần còn lại.
+    topics: [fe-csr-ssr-ssg, fe-hydration, fe-web-vitals, fe-forms, fe-validation, fe-testing, learn-weekly-schedule, learn-spaced-review]
+
+  - week: 13
+    title: Vòng đời API và thiết kế REST
+    goal: Thiết kế API nhất quán và có đặc tả.
+    practice: Chuẩn hóa API của bài thực hành theo một mô hình lỗi chung; viết đặc tả OpenAPI và sinh tài liệu từ đó.
+    checkpoint: Mọi endpoint có trong đặc tả; lỗi trả về cùng một cấu trúc.
+    topics: [be-concurrency-models, be-api-lifecycle, be-validation-errors, be-rest-design, be-openapi, be-graphql-grpc]
+
+  - week: 14
+    title: Xác thực và phân quyền
+    goal: Biết ai đang gọi và họ được làm gì.
+    practice: Thêm đăng nhập và phân quyền ba vai trò cho bài thực hành (nhân viên gửi, quản lý duyệt, admin cấu hình); viết test chứng minh nhân viên không duyệt được yêu cầu.
+    checkpoint: Test phân quyền chạy xanh; giải thích được token được kiểm ở đâu và hết hạn thế nào.
+    topics: [be-authentication, be-oauth-oidc, be-authorization]
+
+  - week: 15
+    title: Bất đồng bộ và tích hợp
+    goal: Xử lý việc chậm và sự kiện từ bên ngoài mà không lặp tác dụng phụ.
+    practice: Gửi email thông báo khi yêu cầu đổi trạng thái qua background job có retry, backoff và idempotency key; đẩy cập nhật trạng thái lên giao diện bằng SSE; viết test tích hợp với database thật trong container.
+    checkpoint: Chạy lại cùng một job hai lần không gửi hai email.
+    topics: [be-background-jobs, be-queues, be-retry-backoff, be-idempotency, be-webhooks, be-realtime, be-integration-testing, be-contract-testing]
+
+  - week: 16
+    title: Git, container và CI/CD
+    goal: Đưa bài thực hành qua pipeline tự động.
+    practice: Viết Dockerfile cho backend và frontend; dựng pipeline GitLab CI chạy lint, test, build; đưa migration vào pipeline.
+    checkpoint: Merge request chỉ merge được khi pipeline xanh.
+    topics: [ops-git-model, ops-branching, ops-code-review, ops-release, ops-containers, ops-config-secrets, ops-ci-cd, ops-deploy-rollback]
+
+  - week: 17
+    title: Observability, bảo mật và dữ liệu cá nhân
+    goal: Nhìn thấy hệ thống đang chạy thế nào và bảo vệ dữ liệu người dùng.
+    practice: Thêm log có cấu trúc kèm correlation id, metric và trace cho API; phân loại dữ liệu trong schema và chặn dữ liệu cá nhân lọt vào log; rà OWASP Top 10 cho bài thực hành.
+    checkpoint: Lần được một request chậm từ log tới trace; không có dữ liệu cá nhân trong log.
+    topics: [ops-logging, ops-metrics, ops-tracing, ops-slo, ops-owasp-top10, ops-supply-chain, ops-threat-modeling, ops-data-classification, ops-pii-logging, ops-access-control-data, ops-retention-deletion]
+
+  - week: 18
+    title: Kiến trúc hệ thống
+    goal: Ra quyết định kiến trúc có lý do và ghi lại được.
+    practice: Viết ADR cho ba quyết định của bài thực hành (cách triển khai, cache, cách gửi thông báo); thêm timeout và retry có giới hạn cho các lời gọi ra ngoài.
+    checkpoint: Mỗi ADR nêu được phương án bị loại và lý do.
+    topics: [ops-monolith-microservices, ops-scaling, ops-caching-strategies, ops-reliability, ops-cost]
+
+  - week: 19
+    title: Nền tảng LLM và structured output
+    goal: Gọi LLM từ code và nhận kết quả xử lý được.
+    practice: Tự động gợi ý loại yêu cầu và người duyệt bằng LLM với structured output; xử lý trường hợp đầu ra không hợp lệ.
+    checkpoint: Đầu ra luôn qua được schema hoặc rơi vào nhánh fallback có log.
+    topics: [ai-tokens-context, ai-training-inference, ai-hallucination, ai-structured-output, ai-prompt-design, ai-context-engineering]
+
+  - week: 20
+    title: Embedding, retrieval và RAG
+    goal: Tìm theo ngữ nghĩa và trả lời có căn cứ.
+    practice: Tìm yêu cầu tương tự bằng embedding lưu trong pgvector; so sánh với full-text search ở tuần 5 trên cùng bộ câu hỏi.
+    checkpoint: Có bảng so sánh kết quả thật giữa hai cách tìm.
+    topics: [ai-embeddings, ai-retrieval-rag, ai-rag-vs-finetune, db-vector-search]
+
+  - week: 21
+    title: Tool calling, agent và đưa AI vào sản phẩm
+    goal: Cho mô hình gọi công cụ an toàn và đo được chất lượng.
+    practice: Viết bộ eval có đáp án cho tính năng gợi ý ở tuần 19; đo chi phí và độ trễ mỗi lần gọi; thử một prompt injection qua nội dung yêu cầu và thêm lớp phòng vệ.
+    checkpoint: Eval chạy được trước và sau mỗi thay đổi prompt.
+    topics: [ai-tool-calling, ai-mcp, ai-workflow-vs-agent, ai-permissions, ai-evals, ai-cost-latency, ai-fallback, ai-prompt-injection]
+
+  - week: 22
+    title: Giao việc cho coding agent (đào sâu)
+    goal: Viết spec và context đủ để agent làm đúng việc.
+    practice: Viết spec cho một tính năng mới của bài thực hành (báo cáo yêu cầu theo phòng ban); giao cho coding agent; review diff và ghi lại các lỗi gặp phải.
+    checkpoint: Có danh sách lỗi thật từ lần review, phân loại theo nguyên nhân.
+    topics: [aidev-writing-specs, aidev-task-breakdown, aidev-repo-context, aidev-reviewing-ai-code, aidev-failure-modes]
+
+  - week: 23
+    title: Test làm lưới an toàn và giới hạn agent
+    goal: Dùng agent mà vẫn kiểm soát được rủi ro.
+    practice: Viết test trước cho một thay đổi, để agent làm trong sandbox giới hạn quyền, so sánh với lần ở tuần 22.
+    checkpoint: Nêu được một việc trong bài thực hành mà bạn chọn không giao cho agent và lý do.
+    topics: [aidev-tests-as-guardrails, aidev-sandbox-permissions, aidev-when-not-to-use]
+
+  - week: 24
+    title: Bài tổng hợp cuối kỳ
+    goal: Tổng hợp những gì đã học qua bài thực hành hoàn chỉnh.
+    practice: Hoàn thiện bài thực hành, trình bày kiến trúc, các quyết định và số đo thật; viết retro 24 tuần.
+    checkpoint: Rà soát toàn bộ mindmap — tỷ lệ Đã hiểu, bài quá hạn ôn, bài quá hạn rà soát.
+    topics: [learn-capstone, learn-spaced-review]

@@ -1,0 +1,40 @@
+{
+  "builtAt": "2026-10-15T03:12:07.926Z",
+  "topics": {
+    "skeleton": 133,
+    "verified": 15
+  },
+  "artifactBytes": 1381646,
+  "steps": [
+    {
+      "step": "Typecheck",
+      "ok": true,
+      "ms": 5533
+    },
+    {
+      "step": "Lint",
+      "ok": true,
+      "ms": 2996
+    },
+    {
+      "step": "Kiểm tra nội dung",
+      "ok": true,
+      "ms": 944
+    },
+    {
+      "step": "Unit test",
+      "ok": true,
+      "ms": 2810
+    },
+    {
+      "step": "Build",
+      "ok": true,
+      "ms": 5570
+    },
+    {
+      "step": "Test end-to-end",
+      "ok": true,
+      "ms": 31741
+    }
+  ]
+}

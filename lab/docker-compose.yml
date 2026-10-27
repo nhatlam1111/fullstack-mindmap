@@ -1,0 +1,29 @@
+# Lab thử nghiệm trên máy bạn: `docker compose up -d` (PostgreSQL), thêm `--profile oracle` để chạy Oracle.
+# Phiên bản được cố định để kết quả tái lập được.
+services:
+  postgres:
+    image: postgres:16          # cùng major version với các lần chạy ghi trong README
+    environment:
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab
+      POSTGRES_DB: lab
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+
+  oracle:
+    # Image Oracle Database Free do cộng đồng duy trì (gvenzl), phổ biến cho môi trường dev/test.
+    # Kết nối: localhost:1521, service FREEPDB1, user lab / mật khẩu lab.
+    image: gvenzl/oracle-free:23.26.1-slim
+    environment:
+      ORACLE_PASSWORD: lab_admin
+      APP_USER: lab
+      APP_USER_PASSWORD: lab
+    ports: ["1521:1521"]
+    volumes: ["oradata:/opt/oracle/oradata"]
+    profiles: ["oracle"]
+
+  # Tuần 5 thêm redis và mongo.
+
+volumes:
+  pgdata:
+  oradata:

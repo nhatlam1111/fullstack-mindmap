@@ -1,0 +1,71 @@
+# Atomicity khi duyệt yêu cầu
+Máy chủ: PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+Isolation mặc định: read committed
+Client: Node.js v22.22.0, driver pg 8.16.3
+Thời điểm chạy: 2026-10-14T07:18:57.393Z
+[A]    75ms  drop schema if exists exp_acid cascade
+[A]    77ms  NOTICE: drop cascades to 2 other objects
+   DETAIL: drop cascades to table exp_acid.requests
+drop cascades to table exp_acid.request_status_history
+   [A] → DROP
+[A]    82ms  create schema exp_acid
+   [A] → CREATE
+[A]    90ms  set search_path = exp_acid
+   [A] → SET
+[A]    90ms  create table requests (id integer primary key, status text not null check (status in ('pending','approved','rejected')))
+   [A] → CREATE
+[A]    99ms  create table request_status_history ( id integer generated always as identity primary key, request_id integer not null references requests, to_status text not null, changed_by integer not null)
+   [A] → CREATE
+[A]   106ms  insert into requests values (1, 'pending'), (2, 'pending')
+   [A] → INSERT 2
+
+## Không dùng transaction: mỗi lệnh tự commit
+[A]   108ms  update requests set status = 'approved' where id = 1
+   [A] → UPDATE 1
+[A]   110ms  insert into request_status_history (request_id, to_status, changed_by) values (1, 'approved', null)
+[A]   111ms  LỖI 23502: null value in column "changed_by" of relation "request_status_history" violates not-null constraint
+   DETAIL: Failing row contains (1, 1, approved, null).
+[A]   112ms  select r.id, r.status, (select count(*) from request_status_history h where h.request_id = r.id) as so_dong_lich_su from requests r where id = 1
+   [A] →
+   id | status   | so_dong_lich_su
+   ---+----------+----------------
+   1  | approved | 0              
+   (1 dòng)
+-- Yêu cầu 1 đã đổi trạng thái nhưng không có lịch sử: dữ liệu nửa vời.
+
+## Dùng transaction: bước hai lỗi thì bước một cũng không còn
+[A]   114ms  begin
+   [A] → BEGIN
+[A]   115ms  update requests set status = 'approved' where id = 2
+   [A] → UPDATE 1
+[A]   115ms  insert into request_status_history (request_id, to_status, changed_by) values (2, 'approved', null)
+[A]   116ms  LỖI 23502: null value in column "changed_by" of relation "request_status_history" violates not-null constraint
+   DETAIL: Failing row contains (2, 2, approved, null).
+[A]   116ms  select 1
+[A]   117ms  LỖI 25P02: current transaction is aborted, commands ignored until end of transaction block
+-- Sau một lỗi, PostgreSQL từ chối mọi lệnh tiếp theo cho tới khi rollback.
+[A]   117ms  rollback
+   [A] → ROLLBACK
+[A]   118ms  select r.id, r.status, (select count(*) from request_status_history h where h.request_id = r.id) as so_dong_lich_su from requests r where id = 2
+   [A] →
+   id | status  | so_dong_lich_su
+   ---+---------+----------------
+   2  | pending | 0              
+   (1 dòng)
+
+## Dùng transaction, cả hai bước đều đúng
+[A]   119ms  begin
+   [A] → BEGIN
+[A]   119ms  update requests set status = 'approved' where id = 2
+   [A] → UPDATE 1
+[A]   119ms  insert into request_status_history (request_id, to_status, changed_by) values (2, 'approved', 7)
+   [A] → INSERT 1
+[A]   120ms  commit
+   [A] → COMMIT
+[A]   121ms  select r.id, r.status, (select count(*) from request_status_history h where h.request_id = r.id) as so_dong_lich_su from requests r order by id
+   [A] →
+   id | status   | so_dong_lich_su
+   ---+----------+----------------
+   1  | approved | 0              
+   2  | approved | 1              
+   (2 dòng)

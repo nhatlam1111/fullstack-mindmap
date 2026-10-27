@@ -1,0 +1,286 @@
+# Thử nghiệm: db-mvcc
+
+**Câu hỏi.** Update trên PostgreSQL có sửa dòng tại chỗ không? Khi nào phiên bản cũ được dọn, và điều gì giữ chúng lại?
+
+**Môi trường.** PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1), cài sẵn trong môi trường build Linux của Claude; client Node.js v22.22.0 với driver `pg` 8.16.3. Chạy ngày 15/10/2026.
+
+**Chạy lại.**
+
+```bash
+cd lab
+docker compose up -d postgres   # hoặc dùng PostgreSQL 16 có sẵn
+npm install
+node experiments/db-mvcc/run.mjs
+```
+
+**Kết luận từ kết quả dưới đây.**
+
+- Sau update, dòng id 1 chuyển từ `ctid (0,1)`, `xmin 1517` sang `ctid (5,76)`, `xmin 1518`: PostgreSQL ghi một phiên bản mới thay vì sửa tại chỗ.
+- Update 1.000 dòng để lại 1.000 dead tuple; VACUUM dọn hết (`1000 removed`) khi không còn transaction nào cần chúng.
+- Transaction Repeatable Read đang mở và chỉ đọc: `pg_stat_activity` cho thấy `backend_xid` NULL nhưng `backend_xmin` = 1520 (giữ snapshot). VACUUM báo `1000 are dead but not yet removable`; sau khi transaction đó commit, VACUUM dọn được.
+- Transaction Read Committed đang mở, chỉ chạy SELECT và đang nghỉ giữa hai câu lệnh: `backend_xid` và `backend_xmin` đều NULL, VACUUM vẫn dọn được 1.000 dòng.
+- Transaction Read Committed đang mở đã ghi một dòng vào bảng khác (`other_table`): `backend_xid` = 1523, `backend_xmin` NULL. VACUUM trên `requests` vẫn báo `1000 are dead but not yet removable` cho tới khi transaction đó commit.
+- Database lab có `age(datfrozenxid)` = 803, rất nhỏ so với `autovacuum_freeze_max_age` 200.000.000.
+
+**Giới hạn của kết luận.**
+
+- Autovacuum bị tắt riêng cho bảng thử nghiệm để quan sát từng bước; hệ thống thật không nên tắt.
+- Oracle không lưu phiên bản cũ trong bảng mà trong undo; thử nghiệm này không áp dụng cho Oracle.
+- Không thử con trỏ (cursor) hay câu lệnh chạy lâu; tài liệu PostgreSQL nêu chúng cũng giữ snapshot.
+
+## Kết quả thật
+
+Nguyên văn output của lần chạy (cũng lưu ở `output.txt`).
+
+```text
+# MVCC và VACUUM trên PostgreSQL
+Máy chủ: PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1) on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0, 64-bit
+Isolation mặc định: read committed
+Client: Node.js v22.22.0, driver pg 8.16.3
+Thời điểm chạy: 2026-10-15T02:39:21.821Z
+[A]    60ms  drop schema if exists exp_mvcc cascade
+[A]   161ms  NOTICE: drop cascades to 2 other objects
+   DETAIL: drop cascades to table exp_mvcc.requests
+drop cascades to table exp_mvcc.other_table
+   [A] → DROP
+[A]   167ms  create schema exp_mvcc
+   [A] → CREATE
+[A]   170ms  create extension if not exists pgstattuple
+[A]   171ms  NOTICE: extension "pgstattuple" already exists, skipping
+   [A] → CREATE
+[A]   171ms  create table exp_mvcc.requests (id integer primary key, status text not null) with (autovacuum_enabled = off)
+   [A] → CREATE
+[A]   182ms  insert into exp_mvcc.requests select g, 'pending' from generate_series(1, 1000) g
+   [A] → INSERT 1000
+[A]   186ms  set search_path = exp_mvcc, public
+   [A] → SET
+[B]   187ms  set search_path = exp_mvcc, public
+   [B] → SET
+-- Tắt autovacuum cho bảng thử nghiệm để quan sát từng bước bằng VACUUM chạy tay.
+
+## 1. Mỗi dòng mang xmin: id transaction đã tạo ra phiên bản này
+[A]   188ms  select ctid, xmin, xmax, id, status from requests where id = 1
+   [A] →
+   ctid  | xmin | xmax | id | status 
+   ------+------+------+----+--------
+   (0,1) | 1517 | 0    | 1  | pending
+   (1 dòng)
+[A]   193ms  update requests set status = 'approved' where id = 1
+   [A] → UPDATE 1
+[A]   195ms  select ctid, xmin, xmax, id, status from requests where id = 1
+   [A] →
+   ctid   | xmin | xmax | id | status  
+   -------+------+------+----+---------
+   (5,76) | 1518 | 0    | 1  | approved
+   (1 dòng)
+-- Sau update, dòng nằm ở vị trí vật lý mới (ctid khác) với xmin mới: đây là phiên bản mới, không phải sửa tại chỗ.
+
+## 2. Update toàn bảng để lại 1.000 phiên bản cũ (dead tuple)
+[A]   195ms  update requests set status = 'approved'
+   [A] → UPDATE 1000
+[A]   200ms  select tuple_count, dead_tuple_count from pgstattuple('exp_mvcc.requests')
+   [A] →
+   tuple_count | dead_tuple_count
+   ------------+-----------------
+   1000        | 1000            
+   (1 dòng)
+
+## 3. VACUUM dọn phiên bản cũ khi không còn transaction nào cần thấy chúng
+[A]   204ms  vacuum (verbose, process_toast false) requests
+[A]   204ms  INFO: vacuuming "lab.exp_mvcc.requests"
+[A]   205ms  INFO: finished vacuuming "lab.exp_mvcc.requests": index scans: 1
+pages: 0 removed, 11 remain, 11 scanned (100.00% of total)
+tuples: 1000 removed, 1000 remain, 0 are dead but not yet removable
+removable cutoff: 1520, which was 0 XIDs old when operation ended
+new relfrozenxid: 1519, which is 3 XIDs ahead of previous value
+frozen: 0 pages from table (0.00% of total) had 0 tuples frozen
+index scan needed: 6 pages from table (54.55% of total) had 1000 dead item identifiers removed
+index "requests_pkey": pages: 8 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+avg read rate: 0.000 MB/s, avg write rate: 42.691 MB/s
+buffer usage: 56 hits, 0 misses, 4 dirtied
+WAL usage: 31 records, 1 full page images, 19101 bytes
+system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+   [A] → VACUUM
+[A]   205ms  select tuple_count, dead_tuple_count from pgstattuple('exp_mvcc.requests')
+   [A] →
+   tuple_count | dead_tuple_count
+   ------------+-----------------
+   1000        | 0               
+   (1 dòng)
+
+## 4. Một transaction Repeatable Read đang mở giữ snapshot cũ
+[B]   206ms  begin isolation level repeatable read
+   [B] → BEGIN
+[B]   206ms  select count(*) filter (where status = 'approved') as approved from requests
+   [B] →
+   approved
+   --------
+   1000    
+   (1 dòng)
+[monitor]   215ms  select application_name, state, backend_xid, backend_xmin from pg_stat_activity where application_name = 'lab-B'
+   [monitor] →
+   application_name | state               | backend_xid | backend_xmin
+   -----------------+---------------------+-------------+-------------
+   lab-B            | idle in transaction | NULL        | 1520        
+   (1 dòng)
+-- B chỉ đọc nên chưa có backend_xid, nhưng giữ snapshot của transaction: backend_xmin khác NULL.
+[A]   271ms  update requests set status = 'rejected'
+   [A] → UPDATE 1000
+[A]   275ms  vacuum (verbose, process_toast false) requests
+[A]   275ms  INFO: vacuuming "lab.exp_mvcc.requests"
+[A]   276ms  INFO: finished vacuuming "lab.exp_mvcc.requests": index scans: 0
+pages: 0 removed, 11 remain, 11 scanned (100.00% of total)
+tuples: 0 removed, 2000 remain, 1000 are dead but not yet removable
+removable cutoff: 1520, which was 1 XIDs old when operation ended
+frozen: 0 pages from table (0.00% of total) had 0 tuples frozen
+index scan not needed: 0 pages from table (0.00% of total) had 0 dead item identifiers removed
+avg read rate: 0.000 MB/s, avg write rate: 0.000 MB/s
+buffer usage: 37 hits, 0 misses, 0 dirtied
+WAL usage: 1 records, 0 full page images, 237 bytes
+system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+   [A] → VACUUM
+[A]   276ms  select tuple_count, dead_tuple_count from pgstattuple('exp_mvcc.requests')
+   [A] →
+   tuple_count | dead_tuple_count
+   ------------+-----------------
+   1000        | 1000            
+   (1 dòng)
+-- VACUUM không xóa được 1.000 phiên bản cũ vì B có thể vẫn cần đọc chúng.
+[B]   276ms  select count(*) filter (where status = 'approved') as approved from requests
+   [B] →
+   approved
+   --------
+   1000    
+   (1 dòng)
+[B]   277ms  commit
+   [B] → COMMIT
+[A]   478ms  vacuum (verbose, process_toast false) requests
+[A]   478ms  INFO: vacuuming "lab.exp_mvcc.requests"
+[A]   479ms  INFO: finished vacuuming "lab.exp_mvcc.requests": index scans: 1
+pages: 0 removed, 11 remain, 11 scanned (100.00% of total)
+tuples: 1000 removed, 1000 remain, 0 are dead but not yet removable
+removable cutoff: 1521, which was 0 XIDs old when operation ended
+new relfrozenxid: 1520, which is 1 XIDs ahead of previous value
+frozen: 0 pages from table (0.00% of total) had 0 tuples frozen
+index scan needed: 6 pages from table (54.55% of total) had 888 dead item identifiers removed
+index "requests_pkey": pages: 8 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+avg read rate: 0.000 MB/s, avg write rate: 0.000 MB/s
+buffer usage: 56 hits, 0 misses, 0 dirtied
+WAL usage: 31 records, 0 full page images, 9977 bytes
+system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+   [A] → VACUUM
+[A]   479ms  select tuple_count, dead_tuple_count from pgstattuple('exp_mvcc.requests')
+   [A] →
+   tuple_count | dead_tuple_count
+   ------------+-----------------
+   1000        | 0               
+   (1 dòng)
+
+## 4b. Transaction Read Committed đang mở, chỉ chạy SELECT, đang nghỉ giữa hai câu lệnh
+[A]   480ms  create table other_table (x integer)
+   [A] → CREATE
+[B]   482ms  begin isolation level read committed
+   [B] → BEGIN
+[B]   482ms  select count(*) from requests
+   [B] →
+   count
+   -----
+   1000 
+   (1 dòng)
+[monitor]   483ms  select application_name, state, backend_xid, backend_xmin from pg_stat_activity where application_name = 'lab-B'
+   [monitor] →
+   application_name | state               | backend_xid | backend_xmin
+   -----------------+---------------------+-------------+-------------
+   lab-B            | idle in transaction | NULL        | NULL        
+   (1 dòng)
+[A]   484ms  update requests set status = 'cancelled'
+   [A] → UPDATE 1000
+[A]   490ms  vacuum (verbose, process_toast false) requests
+[A]   490ms  INFO: vacuuming "lab.exp_mvcc.requests"
+[A]   491ms  INFO: finished vacuuming "lab.exp_mvcc.requests": index scans: 1
+pages: 0 removed, 11 remain, 11 scanned (100.00% of total)
+tuples: 1000 removed, 1000 remain, 0 are dead but not yet removable
+removable cutoff: 1523, which was 0 XIDs old when operation ended
+new relfrozenxid: 1522, which is 2 XIDs ahead of previous value
+frozen: 0 pages from table (0.00% of total) had 0 tuples frozen
+index scan needed: 6 pages from table (54.55% of total) had 964 dead item identifiers removed
+index "requests_pkey": pages: 8 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+avg read rate: 0.000 MB/s, avg write rate: 0.000 MB/s
+buffer usage: 54 hits, 0 misses, 0 dirtied
+WAL usage: 31 records, 0 full page images, 10351 bytes
+system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+   [A] → VACUUM
+[A]   491ms  select tuple_count, dead_tuple_count from pgstattuple('exp_mvcc.requests')
+   [A] →
+   tuple_count | dead_tuple_count
+   ------------+-----------------
+   1000        | 0               
+   (1 dòng)
+-- B vẫn mở transaction nhưng không giữ snapshot giữa hai câu lệnh, nên VACUUM dọn được.
+[B]   492ms  commit
+   [B] → COMMIT
+
+## 4c. Transaction Read Committed đang mở đã ghi (đã có transaction ID), đang nghỉ
+[B]   492ms  begin isolation level read committed
+   [B] → BEGIN
+[B]   492ms  insert into other_table values (1)
+   [B] → INSERT 1
+[monitor]   493ms  select application_name, state, backend_xid, backend_xmin from pg_stat_activity where application_name = 'lab-B'
+   [monitor] →
+   application_name | state               | backend_xid | backend_xmin
+   -----------------+---------------------+-------------+-------------
+   lab-B            | idle in transaction | 1523        | NULL        
+   (1 dòng)
+[A]   495ms  update requests set status = 'pending'
+   [A] → UPDATE 1000
+[A]   501ms  vacuum (verbose, process_toast false) requests
+[A]   501ms  INFO: vacuuming "lab.exp_mvcc.requests"
+[A]   501ms  INFO: finished vacuuming "lab.exp_mvcc.requests": index scans: 0
+pages: 0 removed, 11 remain, 11 scanned (100.00% of total)
+tuples: 0 removed, 2000 remain, 1000 are dead but not yet removable
+removable cutoff: 1523, which was 2 XIDs old when operation ended
+frozen: 0 pages from table (0.00% of total) had 0 tuples frozen
+index scan not needed: 0 pages from table (0.00% of total) had 0 dead item identifiers removed
+avg read rate: 0.000 MB/s, avg write rate: 0.000 MB/s
+buffer usage: 37 hits, 0 misses, 0 dirtied
+WAL usage: 1 records, 0 full page images, 237 bytes
+system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+   [A] → VACUUM
+[A]   501ms  select tuple_count, dead_tuple_count from pgstattuple('exp_mvcc.requests')
+   [A] →
+   tuple_count | dead_tuple_count
+   ------------+-----------------
+   1000        | 1000            
+   (1 dòng)
+[B]   502ms  commit
+   [B] → COMMIT
+[A]   703ms  vacuum (verbose, process_toast false) requests
+[A]   704ms  INFO: vacuuming "lab.exp_mvcc.requests"
+[A]   704ms  INFO: finished vacuuming "lab.exp_mvcc.requests": index scans: 1
+pages: 0 removed, 11 remain, 11 scanned (100.00% of total)
+tuples: 1000 removed, 1000 remain, 0 are dead but not yet removable
+removable cutoff: 1525, which was 0 XIDs old when operation ended
+new relfrozenxid: 1524, which is 2 XIDs ahead of previous value
+frozen: 0 pages from table (0.00% of total) had 0 tuples frozen
+index scan needed: 6 pages from table (54.55% of total) had 828 dead item identifiers removed
+index "requests_pkey": pages: 8 in total, 0 newly deleted, 0 currently deleted, 0 reusable
+avg read rate: 0.000 MB/s, avg write rate: 0.000 MB/s
+buffer usage: 56 hits, 0 misses, 0 dirtied
+WAL usage: 32 records, 0 full page images, 9318 bytes
+system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+   [A] → VACUUM
+[A]   704ms  select tuple_count, dead_tuple_count from pgstattuple('exp_mvcc.requests')
+   [A] →
+   tuple_count | dead_tuple_count
+   ------------+-----------------
+   1000        | 0               
+   (1 dòng)
+
+## 5. Tuổi transaction ID của database (khoảng cách tới giới hạn wraparound)
+[A]   707ms  select datname, age(datfrozenxid) as tuoi_xid, current_setting('autovacuum_freeze_max_age') as autovacuum_freeze_max_age from pg_database where datname = current_database()
+   [A] →
+   datname | tuoi_xid | autovacuum_freeze_max_age
+   --------+----------+--------------------------
+   lab     | 803      | 200000000                
+   (1 dòng)
+```
