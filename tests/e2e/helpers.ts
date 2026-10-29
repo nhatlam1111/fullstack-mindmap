@@ -8,9 +8,9 @@ export async function blockNetwork(page: Page) {
   await page.route(/^https?:\/\//, (r) => r.abort());
 }
 
-/** Runtime giả lập window.claude: db (lưu trong sessionStorage), user, downloads. */
-export async function fakeClaude(page: Page, seed: Record<string, unknown> = {}) {
-  await page.addInitScript((seedDocs) => {
+/** Runtime giả lập window.claude: db (lưu trong sessionStorage), user, downloads. snapshotDelayMs làm chậm snapshot đầu tiên. */
+export async function fakeClaude(page: Page, seed: Record<string, unknown> = {}, opts: { snapshotDelayMs?: number } = {}) {
+  await page.addInitScript(({ seedDocs, delay }) => {
     const KEY = 'fake-db';
     if (!sessionStorage.getItem(KEY)) sessionStorage.setItem(KEY, JSON.stringify(seedDocs));
     const fake = {
@@ -35,11 +35,11 @@ export async function fakeClaude(page: Page, seed: Record<string, unknown> = {})
               },
               delete: async () => { delete fake.docs[id]; emit(); },
             }),
-            onSnapshot: (next: (s: unknown) => void) => { fake.listeners.add(next); setTimeout(() => next(snap()), 0); return () => fake.listeners.delete(next); },
+            onSnapshot: (next: (s: unknown) => void) => { fake.listeners.add(next); setTimeout(() => next(snap()), delay); return () => fake.listeners.delete(next); },
           }),
         };
         return null;
       },
     };
-  }, seed);
+  }, { seedDocs: seed, delay: opts.snapshotDelayMs ?? 0 });
 }

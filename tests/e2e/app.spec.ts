@@ -30,6 +30,27 @@ test('chặng cuối không có nút sang chặng tiếp', async ({ page }) => {
   await expect(page.getByRole('button', { name: /^Xong, sang chặng/ })).toHaveCount(0);
 });
 
+test('trước khi tải xong dữ liệu không bấm được nút chọn chặng', async ({ page }) => {
+  await fakeClaude(page, { meta: { schemaVersion: 1, currentStage: 5, updatedAt: '2026-10-29T00:00:00.000Z' } }, { snapshotDelayMs: 1500 });
+  await page.goto(APP + '#today');
+  await expect(page.getByRole('heading', { name: 'Hôm nay' })).toBeVisible();
+  expect(await page.getByRole('heading', { name: 'Chọn chặng bắt đầu' }).count()).toBe(0);
+  await expect(page.locator('.week-stamp')).toHaveText('Chặng 5/30');
+
+  // goto chỉ đổi hash không tải lại trang; reload để snapshot lại bị làm chậm
+  await page.goto(APP + '#roadmap');
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Lộ trình', level: 1 })).toBeVisible();
+  expect(await page.getByRole('button', { name: 'Học chặng này' }).count()).toBe(0);
+  await expect(page.getByRole('button', { name: 'Học chặng này' })).toHaveCount(29);
+
+  await page.goto(APP + '#data');
+  await page.reload();
+  const card = page.locator('section', { has: page.locator('#sd-h') });
+  await card.getByLabel('Chặng hiện tại').selectOption('7');
+  expect(await card.getByRole('button', { name: 'Lưu' }).isDisabled()).toBe(true);
+});
+
 test('chọn chặng trên trang Lộ trình', async ({ page }) => {
   await page.goto(APP);
   await page.getByRole('button', { name: 'Bắt đầu' }).click();

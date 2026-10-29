@@ -17,7 +17,7 @@ const STATUS_TEXT = {
 } as const;
 
 export function DataView() {
-  const { status, error, localReason, queue } = useData();
+  const { status, error, localReason, queue, ready } = useData();
   const meta = useMeta();
   const progress = useProgress();
   const orphans = useOrphans();
@@ -46,7 +46,7 @@ export function DataView() {
         </dl>
       </section>
 
-      <StageCard key={stage ?? 0} current={stage} />
+      <StageCard key={stage ?? 0} current={stage} ready={ready} />
       <ExportCard />
       <ImportCard />
 
@@ -82,7 +82,8 @@ export function DataView() {
   );
 }
 
-function StageCard({ current }: { current: number | null }) {
+/** ready: chưa tải xong dữ liệu thì không cho lưu, tránh ghi đè meta trên kho bằng meta mặc định. */
+function StageCard({ current, ready }: { current: number | null; ready: boolean }) {
   const [s, setS] = useState(current ?? 1);
   return (
     <section className="card" aria-labelledby="sd-h">
@@ -92,7 +93,7 @@ function StageCard({ current }: { current: number | null }) {
         <select id="sd-input" className="input" value={s} onChange={(e) => setS(Number(e.target.value))}>
           {content.weeks.map((w) => <option key={w.week} value={w.week}>{w.week}. {w.title}</option>)}
         </select>
-        <button className="btn" type="button" disabled={s === current} onClick={() => actions.setStage(s)}>Lưu</button>
+        <button className="btn" type="button" disabled={!ready || s === current} onClick={() => actions.setStage(s)}>Lưu</button>
       </div>
     </section>
   );

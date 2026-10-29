@@ -11,7 +11,7 @@ export function Today() {
   const week = useWeek();
   const progress = useProgress();
   const due = useDueList();
-  const { status, localReason } = useData();
+  const { status, localReason, ready } = useData();
   const learning = Object.entries(progress)
     .filter(([id, p]) => topics[id] && p.learnStatus === 'learning')
     .sort((a, b) => b[1].updatedAt.localeCompare(a[1].updatedAt))
@@ -32,7 +32,7 @@ export function Today() {
 
       {status === 'local' && <LocalNotice reason={localReason} />}
 
-      {week == null && <StartStageCard />}
+      {ready && week == null && <StartStageCard />}
 
       {wk && (
         <section className="card" aria-labelledby="this-week">

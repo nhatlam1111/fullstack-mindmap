@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { content } from '../content';
 import { useWeek } from '../store/hooks';
-import { actions } from '../store/data';
+import { actions, useData } from '../store/data';
 import { TopicList } from '../components/TopicList';
 
 export function Roadmap({ focus }: { focus?: number }) {
   const current = useWeek();
+  const ready = useData((s) => s.ready);
   const target = focus ?? current ?? undefined;
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export function Roadmap({ focus }: { focus?: number }) {
                     <dt>Mốc kiểm tra</dt><dd>{w.checkpoint}</dd>
                   </dl>
                   <TopicList ids={w.topics} showGroup />
-                  {current !== n && (
+                  {ready && current !== n && (
                     <div className="btn-row">
                       <button className="btn" type="button" onClick={() => actions.setStage(n)}>Học chặng này</button>
                     </div>
