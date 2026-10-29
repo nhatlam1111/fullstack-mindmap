@@ -40,7 +40,7 @@ const BranchNode = memo(({ data }: NodeProps<Node<NodeData>>) => {
     <div className="mm-node mm-branch" data-open={data.open}>
       <In /><Out />
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-        <span className="name">{data.label}</span><span className="count" title="Đã hiểu / chủ đề đã có bài hoặc đã tới tuần học">{data.total ? `${data.done}/${data.total}` : '—'}</span>
+        <span className="name">{data.label}</span><span className="count" title="Đã hiểu / chủ đề đã có bài hoặc thuộc các chặng bạn đã tới">{data.total ? `${data.done}/${data.total}` : '—'}</span>
       </div>
       <div className="progress" aria-hidden="true"><span style={{ width: `${pct}%` }} /></div>
     </div>

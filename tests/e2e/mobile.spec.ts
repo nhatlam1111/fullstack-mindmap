@@ -14,6 +14,8 @@ test('điện thoại: thanh điều hướng dưới, không có bản đồ, k
     await page.goto(APP + '#' + hash);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `cuộn ngang ở #${hash}`).toBeLessThanOrEqual(0);
+    const mainOverflow = await page.evaluate(() => { const m = document.getElementById('main')!; return m.scrollWidth - m.clientWidth; });
+    expect(mainOverflow, `vùng nội dung cuộn ngang ở #${hash}`).toBeLessThanOrEqual(0);
   }
   await page.goto(APP + '#map');
   await expect(page.getByText('Bản đồ chỉ hiển thị trên màn hình rộng.')).toBeVisible();

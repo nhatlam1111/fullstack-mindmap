@@ -166,6 +166,11 @@ test('bản đồ: mở nhánh, chọn chủ đề hiện bài bên phải', asy
   await expect(page.getByRole('complementary', { name: 'Bài học đang chọn' }).getByRole('heading', { level: 1 })).toHaveText('Isolation level');
 });
 
+test('bản đồ: chú thích số đếm nói theo chặng', async ({ page }) => {
+  await page.goto(APP + '#map');
+  await expect(page.locator('.mm-branch .count').first()).toHaveAttribute('title', 'Đã hiểu / chủ đề đã có bài hoặc thuộc các chặng bạn đã tới');
+});
+
 for (const hash of ['today', 'db-mvcc', 'roadmap', 'data', 'review', 'map']) {
   test(`accessibility: không có lỗi axe nghiêm trọng ở #${hash}`, async ({ page }) => {
     await page.goto(APP + '#' + hash);
