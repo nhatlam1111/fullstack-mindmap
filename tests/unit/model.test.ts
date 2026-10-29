@@ -94,6 +94,10 @@ describe('chặng hiện tại', () => {
     expect(currentStage({ startDate: '2026-01-01' }, '2026-10-29', 20)).toBe(20);
   });
   it('chưa có gì thì null', () => { expect(currentStage({}, '2026-10-29', 30)).toBeNull(); });
+  it('meta giữ trường do bản app mới hơn thêm vào', () => {
+    const r = MetaSchema.parse({ schemaVersion: 1, updatedAt: '2026-10-29T00:00:00Z', futureField: 'x' });
+    expect((r as Record<string, unknown>).futureField).toBe('x');
+  });
   it('currentStage hỏng chỉ bỏ trường đó', () => {
     for (const bad of [0, -2, 1.5, 'x']) {
       const r = MetaSchema.parse({ schemaVersion: 1, updatedAt: '2026-10-29T00:00:00Z', lastTopicId: 'db-mvcc', currentStage: bad });

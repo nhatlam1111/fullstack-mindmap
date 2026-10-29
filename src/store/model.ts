@@ -47,7 +47,7 @@ export const MetaSchema = z.object({
   lastTopicId: z.string().optional(),
   lastBackupAt: isoDay.optional(),
   updatedAt: z.string().min(10),
-});
+}).passthrough(); // giữ trường do bản app mới hơn thêm, để bản cũ ghi meta không xóa mất
 
 export const BackupSchema = z.object({
   app: z.literal('fullstack-mindmap'),
