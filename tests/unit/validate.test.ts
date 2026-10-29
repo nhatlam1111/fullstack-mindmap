@@ -6,7 +6,10 @@ import { loadContent, validate } from '../../scripts/lib/content';
 
 let root: string;
 const write = (rel: string, text: string) => { const f = path.join(root, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, text); };
-const weeks = (topics: string[]) => 'weeks:\n' + Array.from({ length: 24 }, (_, i) => `  - week: ${i + 1}\n    title: T\n    goal: G\n    practice: P\n    checkpoint: C\n    topics: [${topics.join(', ')}]\n`).join('');
+const range = (n: number) => Array.from({ length: n }, (_, i) => i + 1);
+const roadmap = (nums: number[], topics: string[], phaseWeeks = nums) =>
+  `phases:\n  - id: p1\n    title: P\n    weeks: [${phaseWeeks.join(', ')}]\nweeks:\n`
+  + nums.map((n) => `  - week: ${n}\n    title: T\n    goal: G\n    practice: P\n    checkpoint: C\n    topics: [${topics.join(', ')}]\n`).join('');
 const topic = (id: string, extra = '', body = '') => `---\nid: ${id}\ntitle: ${id}\nparent: g1\nsummary: s\ncontentStatus: ${body ? 'draft' : 'skeleton'}\nvolatility: slow\n${extra}---\n${body}`;
 const BODY = (ex = 'Chưa có ví dụ thực tế') => ['Vấn đề cần giải quyết', 'Cơ chế và luồng hoạt động', 'Điều kiện áp dụng, lợi ích và đánh đổi', 'Lỗi thường gặp và dấu hiệu nhận biết', 'Ví dụ thực tế', 'Câu hỏi tự kiểm tra', 'Chủ đề liên quan và nguồn kiểm chứng']
   .map((h) => `## ${h}\n\n${h === 'Ví dụ thực tế' ? ex : 'nội dung'}\n`).join('\n');
@@ -14,7 +17,7 @@ const BODY = (ex = 'Chưa có ví dụ thực tế') => ['Vấn đề cần gi�
 beforeEach(() => {
   root = fs.mkdtempSync(path.join(os.tmpdir(), 'mm-'));
   write('content/branches.yaml', 'root: { id: root, title: R }\nbranches:\n  - id: b1\n    title: B\n    volatility: slow\n    groups:\n      - id: g1\n        title: G\n');
-  write('content/roadmap.yaml', 'phases:\n  - id: p1\n    title: P\n    weeks: [' + Array.from({ length: 24 }, (_, i) => i + 1).join(', ') + ']\n' + weeks(['t1']));
+  write('content/roadmap.yaml', roadmap(range(24), ['t1']));
   write('content/topics/b1/t1.md', topic('t1'));
 });
 afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
@@ -35,9 +38,17 @@ describe('validate-content', () => {
     write('content/topics/b1/t1.md', topic('t1', 'related: [khong-co]\n'));
     expect(run().errors.join('\n')).toMatch(/related trỏ tới "khong-co"/);
   });
-  it('bắt lộ trình thiếu tuần', () => {
-    write('content/roadmap.yaml', 'phases:\n  - id: p1\n    title: P\n    weeks: [1]\nweeks:\n  - week: 1\n    title: T\n    goal: G\n    practice: P\n    checkpoint: C\n    topics: [t1]\n');
-    expect(run().errors.join('\n')).toMatch(/tuần 2 xuất hiện 0 lần/);
+  it('lộ trình 30 chặng hợp lệ', () => {
+    write('content/roadmap.yaml', roadmap(range(30), ['t1']));
+    expect(run().errors).toEqual([]);
+  });
+  it('bắt chặng nhảy số', () => {
+    write('content/roadmap.yaml', roadmap([1, 2, 4], ['t1']));
+    expect(run().errors.join('\n')).toMatch(/chặng 3 xuất hiện 0 lần/);
+  });
+  it('bắt giai đoạn không phủ đủ chặng', () => {
+    write('content/roadmap.yaml', roadmap([1, 2], ['t1'], [1]));
+    expect(run().errors.join('\n')).toMatch(/phủ đúng chặng 1–2/);
   });
   it('bắt id từng có rồi biến mất', () => {
     write('content/ids.lock', 't1\nt-cu\n');

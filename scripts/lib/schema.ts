@@ -62,13 +62,13 @@ export const BranchesFile = z.object({
 export const RoadmapFile = z.object({
   phases: z.array(z.object({ id, title: z.string().min(1), weeks: z.array(z.number().int()).min(1) }).strict()).min(1),
   weeks: z.array(z.object({
-    week: z.number().int().min(1).max(24),
+    week: z.number().int().min(1),
     title: z.string().min(1),
     goal: z.string().min(1),
     practice: z.string().min(1),
     checkpoint: z.string().min(1),
     topics: z.array(id).min(1),
-  }).strict()),
+  }).strict()).min(1),
 }).strict();
 
 export type TopicFrontmatterT = z.infer<typeof TopicFrontmatter>;

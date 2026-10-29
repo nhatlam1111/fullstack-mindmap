@@ -168,21 +168,22 @@ export function validate(loaded: Loaded, today: string): ValidationResult {
   };
   for (const id of topicIds) visit(id);
 
-  // lộ trình: đủ 24 tuần
+  // lộ trình: các chặng 1..N liên tục (khóa `week` là số thứ tự chặng)
   const weekNums = roadmap.weeks.map((w) => w.week);
-  for (let n = 1; n <= 24; n++) {
+  const total = Math.max(...weekNums);
+  for (let n = 1; n <= total; n++) {
     const count = weekNums.filter((x) => x === n).length;
-    if (count !== 1) errors.push(`roadmap.yaml: tuần ${n} xuất hiện ${count} lần (cần đúng 1)`);
+    if (count !== 1) errors.push(`roadmap.yaml: chặng ${n} xuất hiện ${count} lần (cần đúng 1)`);
   }
   for (const w of roadmap.weeks) for (const tid of w.topics) {
-    if (!topicIds.has(tid)) errors.push(`roadmap.yaml: tuần ${w.week} trỏ tới chủ đề "${tid}" không tồn tại`);
+    if (!topicIds.has(tid)) errors.push(`roadmap.yaml: chặng ${w.week} trỏ tới chủ đề "${tid}" không tồn tại`);
   }
   const phaseWeeks = roadmap.phases.flatMap((p) => p.weeks).sort((a, b) => a - b);
-  if (phaseWeeks.join(',') !== Array.from({ length: 24 }, (_, i) => i + 1).join(',')) {
-    errors.push('roadmap.yaml: các giai đoạn phải phủ đúng tuần 1–24, mỗi tuần một lần');
+  if (phaseWeeks.join(',') !== Array.from({ length: total }, (_, i) => i + 1).join(',')) {
+    errors.push(`roadmap.yaml: các giai đoạn phải phủ đúng chặng 1–${total}, mỗi chặng một lần`);
   }
   const inRoadmap = new Set(roadmap.weeks.flatMap((w) => w.topics));
-  for (const t of topics) if (!inRoadmap.has(t.fm.id)) warnings.push(`${t.file}: chưa nằm trong tuần nào của lộ trình`);
+  for (const t of topics) if (!inRoadmap.has(t.fm.id)) warnings.push(`${t.file}: chưa nằm trong chặng nào của lộ trình`);
 
   // id từng xuất hiện không được biến mất
   const previous = new Set(topics.flatMap((t) => t.fm.previousIds));
