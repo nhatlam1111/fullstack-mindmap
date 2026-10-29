@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { addDays } from '../lib/dates';
+import { addDays, currentWeek } from '../lib/dates';
 
 export const SCHEMA_VERSION = 1;
 export const REVIEW_LADDER = [7, 21, 60, 150] as const;
@@ -15,6 +15,9 @@ export type TopicProgress = {
 };
 export type Meta = {
   schemaVersion: number;
+  /** Chặng đang học, do người học chọn. */
+  currentStage?: number;
+  /** Ngày bắt đầu của lộ trình 24 tuần cũ; chỉ còn dùng để suy chặng lần đầu. */
   startDate?: string;
   lastTopicId?: string;
   lastBackupAt?: string;
@@ -39,6 +42,7 @@ export const TopicProgressSchema = z.object({
 });
 export const MetaSchema = z.object({
   schemaVersion: z.number().int(),
+  currentStage: z.number().int().min(1).optional().catch(undefined),
   startDate: isoDay.optional(),
   lastTopicId: z.string().optional(),
   lastBackupAt: isoDay.optional(),
@@ -164,7 +168,22 @@ export function reconcileIds(
   return { progress: next, orphans: nextOrphans, moved, orphaned, displaced };
 }
 
-/** Tiến độ của một tập chủ đề. Chủ đề Khung chỉ tính khi tuần học của nó đã bắt đầu. */
+/** Tuần 16–25 của lộ trình 24 tuần cũ ứng với chặng nào trong lộ trình hiện tại (tuần 1–15 giữ số). */
+const LEGACY_WEEK_STAGE = [18, 21, 23, 25, 26, 27, 28, 29, 30, 30];
+
+export function stageFromLegacyWeek(week: number): number {
+  if (week <= 15) return Math.max(1, week);
+  return LEGACY_WEEK_STAGE[Math.min(week, 25) - 16];
+}
+
+/** Chặng hiện tại: chặng đã chọn, nếu chưa có thì suy từ ngày bắt đầu cũ; kẹp trong 1..total. */
+export function currentStage(meta: Pick<Meta, 'currentStage' | 'startDate'>, todayIso: string, total: number): number | null {
+  const week = currentWeek(meta.startDate, todayIso);
+  const stage = meta.currentStage ?? (week == null ? null : stageFromLegacyWeek(week));
+  return stage == null ? null : Math.min(Math.max(stage, 1), total);
+}
+
+/** Tiến độ của một tập chủ đề. Chủ đề Khung chỉ tính khi đã tới chặng của nó. */
 export function progressOf(
   ids: string[],
   info: (id: string) => { hasArticle: boolean; firstWeek: number },

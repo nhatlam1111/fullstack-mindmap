@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   applyReview, markUnderstood, mergeProgress, reconcileIds, migrateBackup, progressOf, emptyProgress,
-  SCHEMA_VERSION, type TopicProgress,
+  stageFromLegacyWeek, currentStage, MetaSchema, SCHEMA_VERSION, type TopicProgress,
 } from '../../src/store/model';
 
 const p = (over: Partial<TopicProgress> = {}): TopicProgress => ({ ...emptyProgress('2026-10-01T00:00:00.000Z'), ...over });
@@ -73,6 +73,34 @@ describe('file sao lưu', () => {
     expect(() => migrateBackup({ ...ok, schemaVersion: SCHEMA_VERSION + 1 })).toThrow(/phiên bản mới hơn/);
   });
   it('không phải object thì báo lỗi', () => { expect(() => migrateBackup('abc')).toThrow(); });
+  it('file sao lưu có currentStage được nhận', () => {
+    const okWithStage = { ...ok, meta: { ...ok.meta, currentStage: 7 } };
+    expect(migrateBackup(okWithStage).meta.currentStage).toBe(7);
+  });
+});
+
+describe('chặng hiện tại', () => {
+  it('đổi tuần cũ sang chặng mới', () => {
+    const m: [number, number][] = [[0, 1], [1, 1], [15, 15], [16, 18], [17, 21], [18, 23], [19, 25], [20, 26], [21, 27], [22, 28], [23, 29], [24, 30], [25, 30]];
+    for (const [w, s] of m) expect(stageFromLegacyWeek(w)).toBe(s);
+  });
+  it('ưu tiên currentStage, kẹp về tổng số chặng', () => {
+    expect(currentStage({ currentStage: 5, startDate: '2020-01-01' }, '2026-10-29', 30)).toBe(5);
+    expect(currentStage({ currentStage: 40 }, '2026-10-29', 30)).toBe(30);
+  });
+  it('chỉ có startDate: suy từ tuần cũ', () => {
+    expect(currentStage({ startDate: '2026-10-15' }, '2026-10-29', 30)).toBe(3);
+    expect(currentStage({ startDate: '2026-11-05' }, '2026-10-29', 30)).toBe(1);
+    expect(currentStage({ startDate: '2026-01-01' }, '2026-10-29', 20)).toBe(20);
+  });
+  it('chưa có gì thì null', () => { expect(currentStage({}, '2026-10-29', 30)).toBeNull(); });
+  it('currentStage hỏng chỉ bỏ trường đó', () => {
+    for (const bad of [0, -2, 1.5, 'x']) {
+      const r = MetaSchema.parse({ schemaVersion: 1, updatedAt: '2026-10-29T00:00:00Z', lastTopicId: 'db-mvcc', currentStage: bad });
+      expect(r.currentStage).toBeUndefined();
+      expect(r.lastTopicId).toBe('db-mvcc');
+    }
+  });
 });
 
 describe('tiến độ', () => {
