@@ -74,11 +74,13 @@ changelog:
     note: "Bỏ chỗ nhắc bài thực hành cũ; nhận định, nguồn và ví dụ không đổi."
   - date: 2026-10-29
     note: "Sửa câu chữ ở đoạn nhắc lab sau phản biện; nhận định, nguồn và ví dụ không đổi."
+  - date: 2026-10-29
+    note: "Sửa câu chữ theo góp ý minor của vòng phản biện 29/10: câu nhắc lab nói lại rằng lab tái hiện trạng thái nửa vời khi không có transaction."
 ---
 
 ## Vấn đề cần giải quyết
 
-Một thao tác nghiệp vụ thường gồm nhiều câu lệnh. Lab ở mục Ví dụ tái hiện một tình huống như vậy: duyệt một yêu cầu nghĩa là đổi trạng thái **và** ghi một dòng lịch sử. Nếu lệnh thứ nhất thành công còn lệnh thứ hai lỗi, dữ liệu rơi vào trạng thái nửa vời.
+Một thao tác nghiệp vụ thường gồm nhiều câu lệnh. Trong lab ở mục Ví dụ, duyệt một yêu cầu nghĩa là đổi trạng thái **và** ghi một dòng lịch sử. Nếu lệnh thứ nhất thành công còn lệnh thứ hai lỗi, dữ liệu rơi vào trạng thái nửa vời; lab tái hiện đúng trạng thái này khi chạy hai lệnh không có transaction.
 
 Transaction gói nhiều bước thành một thao tác **tất cả hoặc không gì cả**[^pg-tx-tutorial].
 
