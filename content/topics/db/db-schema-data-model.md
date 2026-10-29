@@ -78,6 +78,8 @@ changelog:
     note: "Sau phản biện, câu hỏi đó thêm gợi ý dùng hai bảng requests của lab khi chưa có ứng dụng; nhận định, nguồn và ví dụ không đổi."
   - date: 2026-10-29
     note: "Sửa câu chữ theo góp ý minor của vòng phản biện 29/10: câu hỏi đó nói rõ schema theo nghĩa bài dùng, và hai dòng changelog trên được ghi lại cho sát thay đổi."
+  - date: 2026-10-29
+    note: "Phản biện vòng 1 (chặng 1): thay chữ namespace bằng không gian tên của PostgreSQL, thống nhất với thân bài."
 ---
 
 ## Vấn đề cần giải quyết
@@ -136,7 +138,7 @@ Tài liệu PostgreSQL tự ghi chú khác biệt này: trong chuẩn SQL, ở h
 
 ## Câu hỏi tự kiểm tra
 
-- Chọn một ứng dụng bạn đang làm (nếu chưa có, dùng hai bảng `requests` trong lab ở mục Ví dụ): data model của nó là gì, và schema cụ thể (theo nghĩa bài dùng, không phải namespace như `exp_hr`) gồm những gì?
+- Chọn một ứng dụng bạn đang làm (nếu chưa có, dùng hai bảng `requests` trong lab ở mục Ví dụ): data model của nó là gì, và schema cụ thể (theo nghĩa bài dùng, không phải schema theo nghĩa không gian tên của PostgreSQL như `exp_hr`) gồm những gì?
 - Trên PostgreSQL 16, câu `select * from requests` dùng bảng nào? Điều gì quyết định, và khi nào câu lệnh báo `42P01` dù bảng tên đó có tồn tại?
 - Cùng chữ "schema", Oracle và PostgreSQL chỉ hai thứ khác nhau thế nào? Khi chuyển script tạo bảng không ghi schema từ Oracle sang PostgreSQL 16, câu `CREATE TABLE` có thể cho những kết quả nào, tùy role chạy nó?
 - "Flexible schema" của MongoDB 9.0 cho phép gì? Khi nào MongoDB khuyên bật schema validation, và khi đó insert sai cấu trúc bị xử lý thế nào theo mặc định?

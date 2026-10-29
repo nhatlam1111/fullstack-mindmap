@@ -27,6 +27,13 @@ sources:
     product: fullstack-mindmap
     version: "0.1.0"
     checkedAt: 2026-10-29
+  - id: mindmap-validator
+    url: https://github.com/nhatlam1111/fullstack-mindmap/blob/main/scripts/lib/content.ts
+    title: "fullstack-mindmap — scripts/lib/content.ts"
+    supports: "Bài ở trạng thái Khung không bị kiểm bảy tiêu đề; bài đã có nội dung phải có đúng bảy tiêu đề theo thứ tự, mục Đào sâu nếu có phải nằm cuối, nếu không thì validator báo lỗi."
+    product: fullstack-mindmap
+    version: "0.1.0"
+    checkedAt: 2026-10-29
   - id: mindmap-understood
     url: https://github.com/nhatlam1111/fullstack-mindmap/blob/main/src/components/TopicArticle.tsx
     title: "fullstack-mindmap — src/components/TopicArticle.tsx (tiêu chí Đã hiểu)"
@@ -43,13 +50,15 @@ examples:
 changelog:
   - date: 2026-10-29
     note: Claude soạn bài từ nghiên cứu Roediger & Karpicke (2006), phần tóm tắt của Dunlosky và cộng sự (2013) và mã nguồn mindmap 0.1.0.
+  - date: 2026-10-29
+    note: "Phản biện vòng 1: mô tả đúng nhóm STTT (một khoảng đọc 5 phút rồi ba lần tự nhớ lại); bỏ ý không có ai chấm; ghi rõ bước nào ứng với tiêu chí nào; validator chỉ kiểm bài đã có nội dung, thêm nguồn content.ts."
 ---
 
 ## Vấn đề cần giải quyết
 
 Đọc xong một trang tài liệu, ta thường thấy mình đã hiểu vì mọi câu đều quen. Nhưng khi làm việc hay đi phỏng vấn, câu hỏi hiếm khi là "X là gì". Câu hỏi thật thường là: X giải quyết vấn đề gì, chạy ra sao bên trong, khi nào không nên dùng, hỏng thì trông thế nào, và làm sao biết nhận định về X là đúng.
 
-Cảm giác "đã hiểu" sau khi đọc lại có thể đánh lừa. Trong một thí nghiệm, nhóm chỉ đọc đi đọc lại tự tin hơn rằng mình sẽ nhớ sau một tuần, nhưng thực tế nhớ ít hơn nhóm chỉ đọc một lượt rồi tự viết lại những gì nhớ được[^roediger-2006].
+Cảm giác "đã hiểu" sau khi đọc lại có thể đánh lừa. Trong một thí nghiệm, nhóm chỉ đọc đi đọc lại tự tin hơn rằng mình sẽ nhớ sau một tuần, nhưng thực tế nhớ ít hơn nhóm chỉ có một khoảng đọc 5 phút rồi ba lần tự viết lại những gì nhớ được[^roediger-2006].
 
 Sáu câu hỏi dưới đây là cách mindmap này buộc người học tự trả lời cho mọi chủ đề, thay vì chỉ đọc.
 
@@ -64,7 +73,7 @@ Sáu câu hỏi dưới đây là cách mindmap này buộc người học tự 
 5. **Lỗi thường gặp:** người ta hay dùng sai chỗ nào, và dấu hiệu nhận biết là gì (thông báo lỗi, chỉ số, triệu chứng)?
 6. **Cách kiểm chứng:** bằng nguồn nào, thử nghiệm nào, bạn biết các câu trả lời trên là đúng?
 
-**Sáu câu hỏi khớp với bảy mục của mỗi bài.** Validator của mindmap bắt mọi bài có bảy tiêu đề theo đúng thứ tự[^mindmap-sections]:
+**Sáu câu hỏi khớp với bảy mục của mỗi bài.** Trong mindmap 0.1.0, validator bắt mọi bài đã có nội dung (Nháp, Đã kiểm chứng) có đủ bảy tiêu đề theo đúng thứ tự[^mindmap-sections][^mindmap-validator]:
 
 | Câu hỏi | Mục trả lời trong bài |
 |---|---|
@@ -83,12 +92,12 @@ Mục "Câu hỏi tự kiểm tra" là nơi bạn tự trả lời lại các c�
 3. Với câu 6, chạy lại lab hoặc đọc ví dụ thực tế, thay vì tin nhận định trong bài.
 4. Ghi chú lời giải thích của bạn vào ô ghi chú của bài.
 
-Ba bước này khớp với ba tiêu chí của nút "Đánh dấu Đã hiểu": trả lời câu hỏi tự kiểm tra mà không xem bài, chạy lại thử nghiệm hoặc đọc kỹ ví dụ, và ghi chú bằng lời của mình[^mindmap-understood].
+Bước 1, 3 và 4 ứng với ba tiêu chí của nút "Đánh dấu Đã hiểu" trong mindmap 0.1.0: trả lời câu hỏi tự kiểm tra mà không xem bài, chạy lại thử nghiệm hoặc đọc kỹ ví dụ, và ghi chú bằng lời của mình[^mindmap-understood]. Bước 2 là cách bạn tự biết mình đã đạt tiêu chí thứ nhất hay chưa.
 
 **Vì sao tự trả lời hiệu quả hơn đọc lại.** Nghiên cứu về trí nhớ cho thấy hai điều:
 
-- Tự nhớ lại (retrieval, hay practice testing) giúp nhớ lâu hơn đọc lại, kể cả khi không có ai chấm hay phản hồi[^roediger-2006]. Một bài tổng quan 10 kỹ thuật học xếp practice testing vào nhóm hữu ích cao, còn đọc lại và tô đậm vào nhóm thấp[^dunlosky-2013].
-- Tự hỏi "vì sao" (elaborative interrogation) và tự giải thích (self-explanation) được đánh giá ở mức hữu ích trung bình, vì bằng chứng còn hạn chế[^dunlosky-2013]. Câu 2 và câu 4 dựa vào hai kỹ thuật này, nên nên coi chúng là hỗ trợ, còn phần cốt lõi vẫn là tự trả lời không nhìn bài.
+- Tự nhớ lại (retrieval, hay practice testing) giúp nhớ lâu hơn đọc lại, kể cả khi người học không nhận được phản hồi về bài làm của mình[^roediger-2006]. Một bài tổng quan 10 kỹ thuật học xếp practice testing vào nhóm hữu ích cao, còn đọc lại và tô đậm vào nhóm thấp[^dunlosky-2013].
+- Tự hỏi "vì sao" (elaborative interrogation) và tự giải thích (self-explanation) được đánh giá ở mức hữu ích trung bình, vì bằng chứng còn hạn chế[^dunlosky-2013]. Câu 2 và câu 4 dựa vào hai kỹ thuật này, nên coi chúng là hỗ trợ, còn phần cốt lõi vẫn là tự trả lời không nhìn bài.
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 
