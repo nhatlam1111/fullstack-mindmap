@@ -55,6 +55,8 @@ changelog:
     note: "Phản biện vòng 3: thêm yêu cầu đi kèm lựa chọn của Microsoft."
   - date: 2026-10-29
     note: "Bỏ chỗ nhắc bài thực hành cũ; nhận định, nguồn và ví dụ không đổi."
+  - date: 2026-10-29
+    note: "Sửa câu chữ ở đoạn nhắc lab sau phản biện; nhận định, nguồn và ví dụ không đổi."
 ---
 
 ## Vấn đề cần giải quyết
@@ -71,7 +73,7 @@ Ba dạng chuẩn đầu tiên, theo cách diễn đạt giản lược của t�
 2. **Dạng chuẩn 2 (2NF):** tập giá trị dùng chung cho nhiều bản ghi được tách thành bảng riêng, nối bằng foreign key; bản ghi chỉ phụ thuộc vào primary key của bảng (khóa ghép nếu cần).
 3. **Dạng chuẩn 3 (3NF):** loại bỏ các cột không phụ thuộc vào khóa. Ví dụ của Microsoft: số phòng của cố vấn (Adv-Room) phụ thuộc vào cố vấn chứ không vào sinh viên, nên chuyển sang bảng Faculty.
 
-Trong ví dụ đó, Microsoft ghi rằng Adv-Room phụ thuộc hàm vào cột Advisor[^ms-normalization], mà Advisor không phải khóa của bảng sinh viên. Nói cách khác, Adv-Room chỉ gắn với khóa một cách gián tiếp, qua một cột không phải khóa; đó là kiểu cột mà quy tắc 3NF loại ra. Áp vào kịch bản của lab ở mục Ví dụ: tên phòng ban phụ thuộc vào phòng ban của người gửi, không phụ thuộc trực tiếp vào yêu cầu. Lưu tên phòng ban trong mỗi dòng yêu cầu tạo ra đúng loại bất thường ở lab dưới đây. Tách ra bảng `departments` và tham chiếu bằng id thì tên chỉ nằm ở một chỗ.
+Trong ví dụ đó, Microsoft ghi rằng Adv-Room phụ thuộc hàm vào cột Advisor[^ms-normalization], mà Advisor không phải khóa của bảng sinh viên. Nói cách khác, Adv-Room chỉ gắn với khóa một cách gián tiếp, qua một cột không phải khóa; đó là kiểu cột mà quy tắc 3NF loại ra. Lab ở mục Ví dụ áp quy tắc này vào một bảng yêu cầu: tên phòng ban phụ thuộc vào phòng ban của người gửi, không phụ thuộc trực tiếp vào yêu cầu, nên lưu tên phòng ban trong mỗi dòng yêu cầu tạo ra đúng loại bất thường mà lab ghi lại. Trong thiết kế đã tách của lab, tên chỉ nằm ở bảng `departments`; mỗi người dùng tham chiếu phòng ban của mình bằng id, còn mỗi yêu cầu tham chiếu người gửi.
 
 **Denormalization**, theo cách bài này dùng chữ, là cố ý giữ dữ liệu lặp hoặc gộp bảng, ngược với các quy tắc trên. MongoDB 9.0 gọi mô hình document và mảng lồng nhau là mô hình denormalized[^mongo-tx]. Microsoft ghi rằng nếu vi phạm một trong ba quy tắc đầu, ứng dụng phải lường trước các vấn đề như dữ liệu dư thừa và phụ thuộc không nhất quán[^ms-normalization].
 

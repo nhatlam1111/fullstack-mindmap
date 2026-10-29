@@ -72,11 +72,13 @@ changelog:
     note: "Phản biện vòng 3: thêm ngoại lệ ROLLBACK TO SAVEPOINT khi nói về thời gian giữ khóa."
   - date: 2026-10-29
     note: "Bỏ chỗ nhắc bài thực hành cũ; nhận định, nguồn và ví dụ không đổi."
+  - date: 2026-10-29
+    note: "Sửa câu chữ ở đoạn nhắc lab sau phản biện; nhận định, nguồn và ví dụ không đổi."
 ---
 
 ## Vấn đề cần giải quyết
 
-Một thao tác nghiệp vụ thường gồm nhiều câu lệnh. Trong kịch bản của lab ở mục Ví dụ, duyệt một yêu cầu nghĩa là đổi trạng thái **và** ghi một dòng lịch sử. Nếu lệnh thứ nhất thành công còn lệnh thứ hai lỗi, dữ liệu rơi vào trạng thái nửa vời. Lab ở mục Ví dụ tái hiện đúng tình huống này.
+Một thao tác nghiệp vụ thường gồm nhiều câu lệnh. Lab ở mục Ví dụ tái hiện một tình huống như vậy: duyệt một yêu cầu nghĩa là đổi trạng thái **và** ghi một dòng lịch sử. Nếu lệnh thứ nhất thành công còn lệnh thứ hai lỗi, dữ liệu rơi vào trạng thái nửa vời.
 
 Transaction gói nhiều bước thành một thao tác **tất cả hoặc không gì cả**[^pg-tx-tutorial].
 
