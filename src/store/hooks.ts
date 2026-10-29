@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { useData, viewDocs, selectProgress, selectMeta, selectOrphans, selectUndo } from './data';
-import { today, currentWeek } from '../lib/dates';
-import { isDue, type TopicProgress } from './model';
-import { topics } from '../content';
+import { today } from '../lib/dates';
+import { isDue, currentStage, type TopicProgress } from './model';
+import { content, topics } from '../content';
 
 export function useDocs() {
   const remote = useData((s) => s.remote);
@@ -25,9 +25,10 @@ export function useUndo() {
   const docs = useDocs();
   return useMemo(() => selectUndo(docs), [docs]);
 }
+/** Chặng hiện tại (tên giữ từ thời lộ trình theo tuần). */
 export function useWeek() {
   const meta = useMeta();
-  return currentWeek(meta.startDate, today());
+  return currentStage(meta, today(), content.weeks.length);
 }
 
 export type DisplayStatus = 'none' | 'learning' | 'understood' | 'due';

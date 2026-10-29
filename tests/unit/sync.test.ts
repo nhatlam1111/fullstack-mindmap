@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useData, actions, viewDocs, selectProgress, __resetForTests, __setBackendForTests, __flushNow } from '../../src/store/data';
+import { useData, actions, viewDocs, selectProgress, selectMeta, __resetForTests, __setBackendForTests, __flushNow } from '../../src/store/data';
 import type { Backend, Docs } from '../../src/store/backend';
+import { addDays, today } from '../../src/lib/dates';
 
 class FakeBackend implements Backend {
   readonly mode = 'db' as const;
@@ -88,5 +89,40 @@ describe('đồng bộ kho dữ liệu', () => {
     await __flushNow();
     expect(b.docs['t.chu-de-da-xoa']).toBeUndefined();
     expect((b.docs['orphan.chu-de-da-xoa'] as { note: string }).note).toBe('đừng mất');
+  });
+});
+
+describe('chặng hiện tại', () => {
+  const meta = () => selectMeta(viewDocs(useData.getState()));
+  const withDocs = (docs: Docs) => { __resetForTests(); const b2 = new FakeBackend(); b2.docs = docs; __setBackendForTests(b2); return b2; };
+  beforeEach(() => { __resetForTests(); __setBackendForTests(new FakeBackend()); });
+
+  it('meta cũ chỉ có startDate: ghi currentStage một lần', async () => {
+    const b2 = withDocs({ meta: { schemaVersion: 1, startDate: addDays(today(), -14), updatedAt: '2026-10-01T00:00:00.000Z' } });
+    await __flushNow();
+    expect((b2.docs.meta as { currentStage: number }).currentStage).toBe(3);
+    b2.emit(); await __flushNow();
+    expect(b2.writes.filter((w) => w === 'meta')).toHaveLength(1);
+  });
+
+  it('đã có currentStage thì không ghi meta', async () => {
+    const b2 = withDocs({ meta: { schemaVersion: 1, currentStage: 2, startDate: addDays(today(), -60), updatedAt: '2026-10-01T00:00:00.000Z' } });
+    await __flushNow();
+    expect(b2.writes).not.toContain('meta');
+  });
+
+  it('setStage ghi chặng', () => {
+    actions.setStage(4);
+    expect(meta().currentStage).toBe(4);
+  });
+
+  it('nhập thay thế lấy chặng của file; gộp không đè chặng đang có', () => {
+    const m = (s?: number) => ({ schemaVersion: 1, updatedAt: '2026-10-29T00:00:00.000Z', ...(s ? { currentStage: s } : {}) });
+    actions.importBackup({}, m(9), 'merge');
+    expect(meta().currentStage).toBe(9);
+    actions.importBackup({}, m(12), 'merge');
+    expect(meta().currentStage).toBe(9);
+    actions.importBackup({}, m(12), 'replace');
+    expect(meta().currentStage).toBe(12);
   });
 });

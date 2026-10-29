@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import { safeStorage } from '../lib/storage';
 import { today } from '../lib/dates';
-import { topics } from '../content';
+import { content, topics } from '../content';
 import {
   type Backend, type Docs, type BackendError, LocalBackend, connectDb,
 } from './backend';
 import {
   SCHEMA_VERSION, type Meta, type ProgressMap, type TopicProgress, type MergeMode, type ReviewResult,
-  emptyProgress, markUnderstood, applyReview, mergeProgress, reconcileIds, TopicProgressSchema, MetaSchema,
+  emptyProgress, markUnderstood, applyReview, mergeProgress, reconcileIds, currentStage, TopicProgressSchema, MetaSchema,
 } from './model';
 
 const QUEUE_KEY = 'fsmap:queue:v1';
@@ -173,6 +173,15 @@ function onRemote(docs: Docs) {
     status: backend?.mode === 'local' ? 'local' : Object.keys(s.queue).length ? (s.status === 'offline' ? 'offline' : 'pending') : 'synced',
   }));
   reconcile();
+  migrateStage();
+}
+
+/** Dữ liệu từ lộ trình theo lịch cũ: ghi một lần chặng suy từ ngày bắt đầu, từ đó chặng không chạy theo lịch nữa. */
+function migrateStage() {
+  const meta = selectMeta(viewDocs(useData.getState()));
+  if (meta.currentStage != null || !meta.startDate) return;
+  const stage = currentStage(meta, today(), content.weeks.length);
+  if (stage != null) saveMeta({ currentStage: stage });
 }
 
 /** Chuyển dữ liệu của id đã đổi tên hoặc đã xóa, một lần sau mỗi snapshot. */
@@ -258,8 +267,8 @@ export const actions = {
   review(topicId: string, result: ReviewResult) {
     saveTopic(topicId, applyReview(currentProgress(topicId), result, today(), nowIso()));
   },
-  setStartDate(date: string | undefined) {
-    saveMeta({ startDate: date });
+  setStage(stage: number) {
+    saveMeta({ currentStage: stage });
   },
   markBackedUp() {
     saveMeta({ lastBackupAt: today() });
@@ -283,8 +292,12 @@ export const actions = {
       else enqueue('t.' + id, null);
     }
     const meta = selectMeta(docs);
-    if (mode === 'replace') saveMeta({ startDate: incomingMeta.startDate, lastTopicId: incomingMeta.lastTopicId });
-    else if (!meta.startDate && incomingMeta.startDate) saveMeta({ startDate: incomingMeta.startDate });
+    if (mode === 'replace') {
+      saveMeta({ currentStage: incomingMeta.currentStage, startDate: incomingMeta.startDate, lastTopicId: incomingMeta.lastTopicId });
+    } else {
+      if (meta.currentStage == null && incomingMeta.currentStage != null) saveMeta({ currentStage: incomingMeta.currentStage });
+      if (!meta.startDate && incomingMeta.startDate) saveMeta({ startDate: incomingMeta.startDate });
+    }
     return { changed: changed.size };
   },
   /** Hoàn tác lần nhập gần nhất. */
