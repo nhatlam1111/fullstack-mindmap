@@ -71,6 +71,17 @@ branches:
       - id: db-ops
         title: Vận hành và lựa chọn
 
+  - id: arch
+    title: Kiến trúc ứng dụng
+    volatility: slow
+    groups:
+      - id: arch-modules
+        title: Cấu trúc ứng dụng
+      - id: arch-ddd
+        title: Domain-Driven Design
+      - id: arch-patterns
+        title: Mẫu và quyết định
+
   - id: ops
     title: Vận hành, bảo mật và kiến trúc
     volatility: slow
@@ -87,6 +98,30 @@ branches:
         title: Bảo vệ dữ liệu cá nhân
       - id: ops-architecture
         title: Kiến trúc hệ thống
+      - id: ops-incident
+        title: Xử lý sự cố
+
+  - id: cloud
+    title: Cloud (Azure)
+    volatility: fast
+    groups:
+      - id: cloud-foundations
+        title: Nền tảng và phân quyền
+      - id: cloud-run
+        title: Chạy ứng dụng và dữ liệu
+      - id: cloud-ops
+        title: Hạ tầng dạng code và chi phí
+
+  - id: pay
+    title: Tiền và thanh toán
+    volatility: slow
+    groups:
+      - id: pay-money
+        title: Tiền và sổ cái
+      - id: pay-flows
+        title: Luồng thanh toán
+      - id: pay-ops
+        title: Đối soát và tuân thủ
 
   - id: ai
     title: AI engineering
