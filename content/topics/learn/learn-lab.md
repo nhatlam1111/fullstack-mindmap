@@ -30,7 +30,7 @@ sources:
   - id: lab-harness
     url: https://github.com/nhatlam1111/fullstack-mindmap/blob/main/lab/lib/harness.mjs
     title: "fullstack-mindmap — lab/lib/harness.mjs"
-    supports: "Bộ chạy thử nghiệm mở nhiều phiên PostgreSQL bằng driver pg, in từng câu lệnh kèm tên phiên, số mili giây tính từ lúc script chạy và kết quả; lỗi được in ra (mã lỗi, thông báo, DETAIL) thay vì ném. header() in phiên bản máy chủ (dòng Máy chủ:), isolation mặc định, phiên bản Node.js và driver pg, thời điểm chạy. Cổng mặc định 5433, đổi bằng PGPORT."
+    supports: "Bộ chạy thử nghiệm mở nhiều phiên PostgreSQL bằng driver pg, in từng câu lệnh kèm tên phiên, số mili giây tính từ lúc script chạy và kết quả; lỗi của câu lệnh SQL được in ra (mã lỗi, thông báo, DETAIL) thay vì ném; lỗi kết nối không được bắt. header() in phiên bản máy chủ (dòng Máy chủ:), isolation mặc định, phiên bản Node.js và driver pg, thời điểm chạy. Cổng mặc định 5433, đổi bằng PGPORT."
     product: fullstack-mindmap
     version: "0.1.0"
     checkedAt: 2026-10-29
@@ -60,14 +60,14 @@ sources:
     title: "Docker Docs — Compose file reference: services (bản hiện hành, đọc 29/10/2026)"
     supports: "Tài liệu bản hiện hành; máy của Lam dùng Docker Compose v5.5.1 (lệnh docker compose version, 29/10/2026). Cú pháp ngắn của ports là [HOST:]CONTAINER[/PROTOCOL]; nếu không ghi host IP, Docker gắn vào mọi giao diện (0.0.0.0), bỏ qua luật tường lửa của máy và có thể lộ container ra internet nếu máy có IP công khai. Service có profiles chỉ chạy khi profile đó được bật; service không có profiles luôn chạy. image nhận tag hoặc digest."
     product: Docker Compose
-    version: "v5.5.1 (tài liệu bản hiện hành, đọc 29/10/2026)"
+    version: "tài liệu bản hiện hành, đọc 29/10/2026"
     checkedAt: 2026-10-29
   - id: compose-interpolation
     url: https://docs.docker.com/compose/how-tos/environment-variables/variable-interpolation/
     title: "Docker Docs — Compose: variable interpolation (bản hiện hành, đọc 29/10/2026)"
     supports: "${VAR:-default} lấy giá trị VAR nếu đã đặt và không rỗng, nếu không thì lấy default; ${VAR-default} chỉ dùng default khi VAR chưa đặt. Thứ tự ưu tiên: biến môi trường của shell, rồi file --env-file, rồi file .env trong thư mục project."
     product: Docker Compose
-    version: "v5.5.1 (tài liệu bản hiện hành, đọc 29/10/2026)"
+    version: "tài liệu bản hiện hành, đọc 29/10/2026"
     checkedAt: 2026-10-29
   - id: postgres-image
     url: https://hub.docker.com/_/postgres
@@ -96,6 +96,8 @@ changelog:
     note: "Phản biện vòng 2: chỉ lỗi câu lệnh SQL được in ra, lỗi kết nối làm script dừng; dấu hiệu quên PGPORT lấy từ một lần chạy thật; thêm dấu hiệu cho lỗi mở cổng ra mọi giao diện; nói đúng mức về tag postgres:16 và về giá trị khác giữa các lần chạy; gắn nguồn cho tiêu chí Đã hiểu; ghi Docker Compose v5.5.1 trong bài và ở trường version."
   - date: 2026-10-29
     note: "Phản biện vòng 3: không còn blocker hay major, 5 minor để lại cho lần rà soát sau (ghi ở docs/reviews/chang-01.md); kiểm chứng."
+  - date: 2026-10-29
+    note: "Nhóm tồn (chặng 3): phiên bản Docker Compose ghi là kết quả lệnh trên máy, không gắn vào nguồn tài liệu; sửa supports của lab-harness; tiêu chí Đã hiểu ghi đủ ba vế; dấu hiệu ECONNREFUSED ghi thêm Windows 11 và nơi lưu output; câu về README khớp gợi ý PGPORT mới trong 17 README. Bổ sung cho dòng vòng 2: lần đó còn viết lại câu hỏi về phiên bản đầy đủ và ghi đủ 17 README."
 ---
 
 ## Vấn đề cần giải quyết
@@ -120,7 +122,7 @@ Lab là chỗ chứa các thử nghiệm đó[^lab-readme].
 
 Bài học trỏ tới thử nghiệm bằng một mục trong `examples` với `kind: lab-run` và `path: lab/experiments/<topic-id>`[^lab-readme].
 
-**Môi trường cố định bằng Docker Compose** (`lab/docker-compose.yml`; máy của Lam dùng Docker Compose v5.5.1)[^lab-compose][^compose-services]:
+**Môi trường cố định bằng Docker Compose** (`lab/docker-compose.yml`)[^lab-compose]. Lệnh `docker compose version` trên máy Lam ngày 29/10/2026 cho Docker Compose v5.5.1; cú pháp dưới đây theo tài liệu Compose bản hiện hành[^compose-services]:
 
 - Service `postgres` chạy image `postgres:16`, tạo sẵn user `lab`, mật khẩu `lab`, database `lab`. Dữ liệu nằm trong volume `pgdata`.
 - Cổng `127.0.0.1:${LAB_PG_PORT:-5433}:5432`: trong container là 5432, trên máy là 5433, trừ khi bạn đặt `LAB_PG_PORT`. Cú pháp `${VAR:-default}` lấy giá trị biến nếu đã đặt và không rỗng, nếu không thì lấy giá trị mặc định[^compose-interpolation].
@@ -154,7 +156,7 @@ node experiments/db-mvcc/run.mjs
 **Lợi ích.**
 
 - Nhận định trong bài được neo vào một lần chạy cụ thể, có phiên bản và output đầy đủ. Người đọc tự chạy lại được bằng đúng lệnh trong README.
-- Tiêu chí thứ hai của nút "Đã hiểu" là chạy lại thử nghiệm trong lab hoặc đọc kỹ ví dụ thực tế[^lab-article]. Lab là cách trực tiếp nhất để đạt tiêu chí đó.
+- Tiêu chí thứ hai của nút "Đã hiểu" là chạy lại thử nghiệm trong lab hoặc đọc kỹ ví dụ thực tế, hoặc ghi lý do không cần[^lab-article]. Lab là cách trực tiếp nhất để đạt tiêu chí đó.
 
 **Đánh đổi và giới hạn.**
 
@@ -166,7 +168,7 @@ node experiments/db-mvcc/run.mjs
 ## Lỗi thường gặp và dấu hiệu nhận biết
 
 - **Lab chạy nhầm vào một PostgreSQL khác.** Dấu hiệu: dòng `Máy chủ:` không phải PostgreSQL 16, hoặc lỗi xác thực cho user `lab`. Lab mặc định dùng cổng 5433 để tránh PostgreSQL có sẵn ở 5432[^lab-readme]; nếu bạn đặt `PGPORT`, kiểm lại dòng `Máy chủ:` trước khi dùng kết quả.
-- **Dùng một PostgreSQL 16 có sẵn thay cho container mà quên đặt cổng.** Cả 17 README lab PostgreSQL ghi "hoặc dùng PostgreSQL 16 có sẵn". Harness mặc định cổng 5433[^lab-harness], nên với PostgreSQL ở cổng 5432 bạn phải đặt `PGPORT=5432`, cùng user và mật khẩu nếu khác `lab`. Dấu hiệu quên: khi không có gì nghe ở cổng đó, script in dòng tiêu đề rồi dừng với `AggregateError [ECONNREFUSED]` và không có dòng `Máy chủ:` (chạy thử lab MVCC với `PGPORT=5499` trên máy Lam, Node.js v25.2.1, ngày 29/10/2026). Đặt xong thì kiểm dòng `Máy chủ:`.
+- **Dùng một PostgreSQL 16 có sẵn thay cho container mà quên đặt cổng.** Cả 17 README lab PostgreSQL cho phép dùng PostgreSQL 16 có sẵn thay cho container, và nhắc đặt `PGPORT` (cùng `PGUSER`, `PGPASSWORD` nếu khác `lab`) cho khớp. Harness mặc định cổng 5433[^lab-harness], nên với PostgreSQL ở cổng 5432 bạn phải đặt `PGPORT=5432`. Dấu hiệu quên: khi không có gì nghe ở cổng đó, script in dòng tiêu đề rồi dừng với `AggregateError [ECONNREFUSED]` và không có dòng `Máy chủ:` (chạy thử lab MVCC với `PGPORT=5499` trên máy Lam, Windows 11, Node.js v25.2.1, ngày 29/10/2026; output nguyên văn lưu ở `docs/reviews/chang-01.md`). Đặt xong thì kiểm dòng `Máy chủ:`.
 - **Đổi `POSTGRES_USER`, `POSTGRES_PASSWORD` hay `POSTGRES_DB` mà không thấy tác dụng.** Các biến này chỉ có tác dụng khi container khởi động với thư mục dữ liệu rỗng[^postgres-image]. Volume `pgdata` đã có dữ liệu thì database cũ được giữ nguyên.
 - **Mở cổng ra mọi giao diện mạng.** Nếu `ports` không ghi host IP, Docker gắn vào `0.0.0.0` và bỏ qua tường lửa của máy[^compose-services]. Với mật khẩu yếu như `lab`, máy khác trong mạng có thể kết nối vào. Dấu hiệu: dòng `ports` bắt đầu bằng số cổng, như `5433:5432`, thay vì bằng IP, như `127.0.0.1:5433:5432`. Lab ghi rõ `127.0.0.1`[^lab-compose].
 - **`LAB_PG_PORT` không đổi như mong muốn.** Biến môi trường của shell được ưu tiên hơn file `.env`[^compose-interpolation]. Dấu hiệu: bạn sửa `.env` mà cổng không đổi.

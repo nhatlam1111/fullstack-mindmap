@@ -53,7 +53,7 @@ sources:
 examples:
   - id: lab-acid
     kind: lab-run
-    title: "Duyệt yêu cầu hai bước, bước hai lỗi: có và không có transaction"
+    title: "Duyệt yêu cầu hai bước, bước hai lỗi: có và không có BEGIN"
     path: lab/experiments/db-transaction-acid
     checkedAt: 2026-10-14
   - id: pg-transfer
@@ -80,6 +80,8 @@ changelog:
     note: "Phản biện vòng 1 (chặng 1): câu nhắc lab nói đúng là hai lệnh chạy ở chế độ tự commit, mỗi lệnh một transaction riêng."
   - date: 2026-10-29
     note: "Phản biện vòng 2 (chặng 1): không còn blocker hay major; giữ kiểm chứng, giữ verifiedAt cũ vì chỉ các đoạn đã đổi được phản biện."
+  - date: 2026-10-29
+    note: "Nhóm tồn (chặng 3): mục Ví dụ, tiêu đề ví dụ và câu hỏi tự kiểm tra nói 'không có BEGIN (mỗi lệnh tự commit)' thay cho 'không có transaction', thống nhất với câu nhắc lab."
 ---
 
 ## Vấn đề cần giải quyết
@@ -133,14 +135,14 @@ Hệ quả: giữ transaction ngắn, không chờ người dùng thao tác tron
 ## Ví dụ thực tế
 
 - [ex:lab-acid] — trên PostgreSQL 16.15:
-    - Không có transaction: yêu cầu 1 thành `approved` nhưng có 0 dòng lịch sử, vì lệnh thứ hai vi phạm `NOT NULL` (23502).
+    - Không có `BEGIN` (mỗi lệnh tự commit): yêu cầu 1 thành `approved` nhưng có 0 dòng lịch sử, vì lệnh thứ hai vi phạm `NOT NULL` (23502).
     - Có transaction: cùng lỗi đó khiến câu lệnh sau bị từ chối với `25P02`; sau `ROLLBACK`, yêu cầu 2 vẫn `pending`.
     - Khi cả hai bước đúng, commit lưu cả hai.
 - [ex:pg-transfer] — tài liệu PostgreSQL 16 dùng ví dụ chuyển 100 đô từ tài khoản Alice sang Bob, gồm bốn câu `UPDATE` trên bảng tài khoản và bảng chi nhánh phải cùng thành công[^pg-tx-tutorial].
 
 ## Câu hỏi tự kiểm tra
 
-- Duyệt yêu cầu gồm đổi trạng thái và ghi lịch sử. Vẽ lại điều xảy ra khi lệnh thứ hai lỗi, có và không có transaction.
+- Duyệt yêu cầu gồm đổi trạng thái và ghi lịch sử. Vẽ lại điều xảy ra khi lệnh thứ hai lỗi, có và không có `BEGIN`.
 - Trong một transaction, câu lệnh thứ ba lỗi. Oracle và PostgreSQL xử lý các câu lệnh tiếp theo khác nhau thế nào, và ứng dụng phải làm gì trên mỗi sản phẩm để không lưu dữ liệu nửa vời?
 - Vì sao không nên gửi email thông báo bên trong transaction duyệt yêu cầu?
 - Durability bảo đảm điều gì? Nêu một cấu hình của PostgreSQL 16 khiến transaction đã báo thành công vẫn có thể mất.

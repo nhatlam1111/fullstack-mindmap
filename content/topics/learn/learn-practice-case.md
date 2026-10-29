@@ -15,11 +15,13 @@ related:
   - db-schema-data-model
   - cloud-container-apps
   - cloud-managed-identity
+  - cloud-key-vault
+  - cloud-iam-rbac
 sources:
   - id: mm-roadmap
     url: https://github.com/nhatlam1111/fullstack-mindmap/blob/main/content/roadmap.yaml
     title: "fullstack-mindmap — content/roadmap.yaml (30 chặng)"
-    supports: "Lộ trình 30 chặng chia 11 giai đoạn; mỗi chặng có mục tiêu, bài thực hành và mốc kiểm tra. Chặng 1: viết đặc tả ngắn cho hệ thống nghiên cứu thị trường game đủ rõ để giao cho coding agent; tạo tài khoản SerpApi gói Free, gọi tay Google Play API một lần lấy JSON bảng xếp hạng game của một quốc gia, lưu làm mẫu, không commit API key; thiết kế schema PostgreSQL. Chặng 15: nhập hằng tuần bằng background job có retry và backoff theo giới hạn 50 lượt mỗi giờ của SerpApi, idempotency key là quốc gia, bảng xếp hạng và tuần, contract test với JSON mẫu đã lưu ở chặng 1. Chặng 17: nguồn dữ liệu đặt sau một port với adapter SerpApi và adapter giả; mốc kiểm tra là toàn bộ test chạy mà không gọi SerpApi. Chặng 19: tự tạo tài khoản Azure, đưa API và web lên Container Apps. Chặng 30: hoàn thiện app, README nêu kiến trúc, ADR, số đo thật, link bản chạy trên Azure."
+    supports: "Lộ trình 30 chặng chia 11 giai đoạn; mỗi chặng có mục tiêu, bài thực hành và mốc kiểm tra. Chặng 1: viết đặc tả ngắn cho hệ thống nghiên cứu thị trường game đủ rõ để giao cho coding agent; tạo tài khoản SerpApi gói Free, gọi tay Google Play API một lần lấy JSON bảng xếp hạng game của một quốc gia, lưu làm mẫu, không commit API key; thiết kế schema PostgreSQL. Chặng 15: nhập hằng tuần bằng background job có retry và backoff theo giới hạn 50 lượt mỗi giờ của SerpApi, idempotency key là quốc gia, bảng xếp hạng và tuần, contract test với JSON mẫu đã lưu ở chặng 1. Chặng 17: nguồn dữ liệu đặt sau một port với adapter SerpApi và adapter giả; mốc kiểm tra là toàn bộ test chạy mà không gọi SerpApi. Chặng 19: tự tạo tài khoản Azure, đưa API và web lên Container Apps, cất SerpApi key trong Key Vault đọc bằng managed identity, GitHub Actions deploy qua OIDC federation; chủ đề của chặng gồm cloud-iam-rbac, cloud-managed-identity, cloud-container-apps, cloud-key-vault cùng các bài cloud khác. Chặng 30: hoàn thiện app, README nêu kiến trúc, ADR, số đo thật, link bản chạy trên Azure."
     product: fullstack-mindmap
     version: "0.1.0"
     checkedAt: 2026-10-29
@@ -45,7 +47,7 @@ sources:
   - id: aca-pricing
     url: https://azure.microsoft.com/en-us/pricing/details/container-apps/
     title: "Microsoft Azure — Container Apps pricing"
-    supports: "Gói Consumption có free grant mỗi tháng, tính trên mỗi subscription: 180.000 vCPU-giây, 360.000 GiB-giây và 2 triệu request. Khi app thu về số replica tối thiểu, replica không hoạt động được tính ở mức giá idle thấp hơn; giá idle là giá sau free grant vCPU-giây và GiB-giây."
+    supports: "Gói Consumption tính tiền theo lượng tài nguyên được cấp tính theo giây và theo request; phí tính toán theo số vCPU-giây và GiB-giây app được cấp. Free grant mỗi tháng, tính trên mỗi subscription: 180.000 vCPU-giây, 360.000 GiB-giây và 2 triệu request. Replica được tính giá active khi dùng trên 0,01 core vCPU hoặc nhận trên 1.000 byte mỗi giây, cũng như lúc khởi động và xử lý request; khi app thu về số replica tối thiểu, replica không hoạt động được tính ở mức giá idle thấp hơn; app thu về 0 replica thì không có phí sử dụng."
     product: Azure Container Apps
     checkedAt: 2026-10-29
   - id: google-terms
@@ -72,6 +74,8 @@ changelog:
     note: "Phản biện vòng 2: ghi ngày đọc tài liệu SerpApi; giải thích free grant, vCPU-giây, GiB-giây và trỏ tới các bài cloud của chặng 19."
   - date: 2026-10-29
     note: "Phản biện vòng 3: bỏ câu giải thích vCPU-giây, GiB-giây (mô tả sai một phần cách Azure tính) và câu trỏ tới bài cloud của chặng 19; đoạn đó trở về bản đã qua vòng 2, chỉ giữ giải thích free grant. Không còn blocker hay major; kiểm chứng."
+  - date: 2026-10-29
+    note: "Nhóm tồn (chặng 3): giải thích vCPU-giây, GiB-giây theo bảng giá (tính theo tài nguyên được cấp cho replica, giá idle, 0 replica không tính phí); trỏ đúng từng bài cloud của chặng 19; thêm cloud-key-vault, cloud-iam-rbac vào related."
 ---
 
 ## Vấn đề cần giải quyết
@@ -117,7 +121,7 @@ Cái khó đầu tiên là nguồn dữ liệu. Điều khoản Google (hiệu l
 
 **Hạ tầng**[^mm-practice-design]: repo công khai trên GitHub, CI/CD bằng GitHub Actions. API và web chạy trên Azure Container Apps, nhập hằng tuần bằng Container Apps job, database là PostgreSQL managed. SerpApi key nằm trong Key Vault, app đọc bằng managed identity. GitHub Actions đăng nhập Azure qua OIDC federation, không lưu secret của Azure trong GitHub.
 
-Container Apps gói Consumption có free grant, tức lượng dùng miễn phí mỗi tháng, tính trên mỗi subscription: 180.000 vCPU-giây, 360.000 GiB-giây và 2 triệu request (bảng giá đọc ngày 29/10/2026)[^aca-pricing].
+Container Apps gói Consumption có free grant, tức lượng dùng miễn phí mỗi tháng, tính trên mỗi subscription: 180.000 vCPU-giây, 360.000 GiB-giây và 2 triệu request (bảng giá đọc ngày 29/10/2026)[^aca-pricing]. vCPU-giây và GiB-giây tính theo số vCPU và GiB bộ nhớ được cấp cho replica, nhân với số giây replica chạy, chứ không theo mức app dùng thật. Replica không hoạt động được tính ở mức giá idle thấp hơn, và app thu về 0 replica thì không có phí sử dụng[^aca-pricing]. Managed identity và OIDC federation thuộc bài `cloud-managed-identity`, Key Vault thuộc bài `cloud-key-vault`, phân quyền thuộc bài `cloud-iam-rbac`; cả ba bài nằm ở chặng 19[^mm-roadmap].
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 

@@ -63,6 +63,8 @@ changelog:
     note: "Phản biện vòng 1 (chặng 1): ghi rõ quy tắc áp vào bảng gộp requests_flat của lab."
   - date: 2026-10-29
     note: "Phản biện vòng 2 (chặng 1): không còn blocker hay major; giữ kiểm chứng, giữ verifiedAt cũ vì chỉ các đoạn đã đổi được phản biện."
+  - date: 2026-10-29
+    note: "Nhóm tồn (chặng 3): câu hỏi tự kiểm tra gọi đúng tên bảng gộp requests_flat của lab."
 ---
 
 ## Vấn đề cần giải quyết
@@ -110,7 +112,7 @@ Khuyến nghị của bài này (đây là cách làm bài đề xuất, không 
 
 ## Câu hỏi tự kiểm tra
 
-- Trong bảng `requests(id, title, requester_email, department_name)`, cột nào phụ thuộc vào khóa `id` chỉ thông qua một cột không phải khóa? Tách lại thế nào?
+- Trong bảng gộp `requests_flat(id, title, requester_email, department_name)` của lab, cột nào phụ thuộc vào khóa `id` chỉ thông qua một cột không phải khóa? Tách lại thế nào?
 - Ở lab, vì sao bảng gộp cho phép một phòng ban có hai tên, còn thiết kế đã tách thì không thể?
 - Khi nào bạn chấp nhận lưu lặp `department_name` vào bảng yêu cầu? Cần thêm gì để giữ dữ liệu đúng, và cần đo gì trước khi quyết định?
 

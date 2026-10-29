@@ -67,7 +67,7 @@ changelog:
 
 ## Vấn đề cần giải quyết
 
-Màn hình "Yêu cầu của tôi" cần 200 yêu cầu của một người trong bảng 1 triệu dòng. Không có chuẩn bị gì trước, PostgreSQL 16 phải quét cả bảng, từng dòng một, để tìm dòng khớp[^pg-indexes-intro]. Trong lab, bảng chiếm 88 MB, và tìm 200 dòng đó phải đọc 11.236 trang, tức toàn bộ bảng.
+Lab ở mục Ví dụ cần tìm 200 yêu cầu của một người gửi trong bảng 1 triệu dòng. Không có chuẩn bị gì trước, PostgreSQL 16 phải quét cả bảng, từng dòng một, để tìm dòng khớp[^pg-indexes-intro]. Trong lab, bảng chiếm 88 MB, và tìm 200 dòng đó phải đọc 11.236 trang, tức toàn bộ bảng.
 
 Index là cách để không phải làm vậy.
 

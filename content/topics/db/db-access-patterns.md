@@ -79,7 +79,7 @@ sources:
 examples:
   - id: lab-access-patterns
     kind: lab-run
-    title: "Một màn hình, năm cách đánh index: index ghép, covering index, partial index trên PostgreSQL 16.15"
+    title: "Cùng một truy vấn với nhiều cách đánh index: index ghép, covering index, partial index trên PostgreSQL 16.15"
     path: lab/experiments/db-access-patterns
     checkedAt: 2026-10-16
   - id: ddb-order-entry
@@ -94,7 +94,7 @@ changelog:
 
 ## Vấn đề cần giải quyết
 
-Màn hình "Yêu cầu của tôi" cần 20 yêu cầu mới nhất của một người gửi, trong bảng 1 triệu yêu cầu. Lab thử ba cách đánh index cho đúng truy vấn đó: index trên `created_at` đọc 1.621 trang, index trên `requester_id` đọc 203 trang, index ghép `(requester_id, created_at)` đọc 23 trang. Cả ba đều "có index", nhưng chỉ cách thứ ba khớp với cách màn hình hỏi dữ liệu.
+Lab ở mục Ví dụ cần 20 yêu cầu mới nhất của một người gửi, trong bảng 1 triệu yêu cầu. Lab thử ba cách đánh index cho đúng truy vấn đó: index trên `created_at` đọc 1.621 trang, index trên `requester_id` đọc 203 trang, index ghép `(requester_id, created_at)` đọc 23 trang. Cả ba đều "có index", nhưng chỉ cách thứ ba khớp với cách truy vấn hỏi dữ liệu.
 
 Thiết kế dữ liệu và index mà chưa biết ứng dụng sẽ hỏi gì là đoán. Tài liệu Amazon DynamoDB nói thẳng: không nên bắt đầu thiết kế schema cho tới khi biết các câu hỏi nó phải trả lời[^ddb-nosql-design].
 
@@ -114,11 +114,11 @@ Với truy vấn `where requester_id = 1234 order by created_at desc limit 20`:
 
 Đảo lại, truy vấn chỉ lọc theo `created_at` (một ngày, 1.440 dòng) khi chỉ có index `(requester_id, created_at)`: planner chọn quét song song cả bảng, 11.236 trang. Tài liệu giải thích: index có thể dùng cho truy vấn chỉ ràng buộc cột sau, nhưng phải quét cả index, nên trong đa số trường hợp planner chọn quét tuần tự bảng[^pg-indexes-multicolumn].
 
-**Covering index và index-only scan.** Index-only scan trả giá trị thẳng từ index mà không xem dòng trong bảng. Nó cần loại index hỗ trợ (B-tree luôn hỗ trợ) và truy vấn chỉ tham chiếu cột có trong index[^pg-index-only-scans]. Màn hình cần thêm `id` và `status`; mệnh đề `INCLUDE` đưa chúng vào index như cột không phải khóa, không dùng để tìm nhưng trả về được bởi index-only scan[^pg-createindex]. Index như vậy gọi là covering index[^pg-index-only-scans].
+**Covering index và index-only scan.** Index-only scan trả giá trị thẳng từ index mà không xem dòng trong bảng. Nó cần loại index hỗ trợ (B-tree luôn hỗ trợ) và truy vấn chỉ tham chiếu cột có trong index[^pg-index-only-scans]. Truy vấn ở bước 5 của lab lấy thêm `id` và `status`; mệnh đề `INCLUDE` đưa chúng vào index như cột không phải khóa, không dùng để tìm nhưng trả về được bởi index-only scan[^pg-createindex]. Index như vậy gọi là covering index[^pg-index-only-scans].
 
 Có một điều kiện ngầm: với mỗi mục tìm được, PostgreSQL xem bit trong visibility map của trang bảng tương ứng. Bit bật thì trả dữ liệu ngay; không bật thì vẫn phải vào bảng[^pg-index-only-scans]. Lab: ngay sau khi nạp dữ liệu, `Index Only Scan Backward` vẫn có `Heap Fetches: 20` và đọc 23 trang; sau `VACUUM`, `Heap Fetches: 0` và chỉ còn 4 trang.
 
-**Partial index cho tập con hay hỏi.** Partial index chỉ chứa mục cho các dòng thỏa một điều kiện (predicate)[^pg-indexes-partial]. Danh sách "chờ duyệt" chỉ hỏi yêu cầu `pending` (5% số dòng). Lab: index `(created_at) where status = 'pending'` chiếm 1.112 kB, trong khi index `(status, created_at)` cho cả bảng chiếm 38 MB. Khi có cả hai, truy vấn 20 yêu cầu chờ duyệt mới nhất dùng partial index và đọc 7 trang.
+**Partial index cho tập con hay hỏi.** Partial index chỉ chứa mục cho các dòng thỏa một điều kiện (predicate)[^pg-indexes-partial]. Truy vấn ở bước 6 của lab chỉ hỏi yêu cầu `pending` (5% số dòng). Lab: index `(created_at) where status = 'pending'` chiếm 1.112 kB, trong khi index `(status, created_at)` cho cả bảng chiếm 38 MB. Khi có cả hai, truy vấn 20 yêu cầu chờ duyệt mới nhất dùng partial index và đọc 7 trang.
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 
@@ -134,9 +134,9 @@ Có một điều kiện ngầm: với mỗi mục tìm được, PostgreSQL xem
 - **Sai thứ tự cột trong index ghép.** Dấu hiệu: truy vấn chỉ lọc theo cột thứ hai vẫn `Seq Scan` dù cột đó có trong index (lab bước 4)[^pg-indexes-multicolumn].
 - **Truy vấn lấy thêm cột không có trong index.** Index-only scan đòi truy vấn chỉ tham chiếu cột có trong index[^pg-index-only-scans]. Dấu hiệu: kế hoạch là `Index Scan` chứ không phải `Index Only Scan`, dù đã tạo covering index.
 - **Mong index-only scan ngay sau khi nạp dữ liệu lớn.** Dấu hiệu: `Heap Fetches` gần bằng số dòng trả về. Visibility map chưa đánh dấu trang; sau `VACUUM` (thủ công hoặc autovacuum) thì giảm (lab bước 5).
-- **Truyền điều kiện của partial index qua tham số.** Việc khớp predicate diễn ra lúc lập kế hoạch, nên tài liệu PostgreSQL 16 lưu ý điều kiện truyền qua tham số không dùng được partial index[^pg-indexes-partial]. Câu lệnh prepared có thể chạy bằng custom plan (lập riêng cho giá trị tham số của lần chạy) hoặc generic plan (giống nhau cho mọi lần chạy); mặc định, 5 lần chạy đầu dùng custom plan rồi PostgreSQL mới cân nhắc chuyển sang generic plan[^pg-prepare]. Lab bước 7: cùng câu `where status = $1` chạy với `'pending'`, custom plan dùng partial index, generic plan thì không. Dấu hiệu: `EXPLAIN EXECUTE` cho kế hoạch có `$1` và không có partial index[^pg-prepare]. Nếu danh sách luôn là `pending`, giữ giá trị cố định trong câu SQL.
+- **Truyền điều kiện của partial index qua tham số.** Việc khớp predicate diễn ra lúc lập kế hoạch, nên tài liệu PostgreSQL 16 lưu ý điều kiện truyền qua tham số không dùng được partial index[^pg-indexes-partial]. Câu lệnh prepared có thể chạy bằng custom plan (lập riêng cho giá trị tham số của lần chạy) hoặc generic plan (giống nhau cho mọi lần chạy); mặc định, 5 lần chạy đầu dùng custom plan rồi PostgreSQL mới cân nhắc chuyển sang generic plan[^pg-prepare]. Lab bước 7: cùng câu `where status = $1` chạy với `'pending'`, custom plan dùng partial index, generic plan thì không. Dấu hiệu: `EXPLAIN EXECUTE` cho kế hoạch có `$1` và không có partial index[^pg-prepare]. Nếu truy vấn luôn hỏi `pending`, giữ giá trị cố định trong câu SQL.
 - **Tạo hàng loạt partial index không chồng lấn để thay partitioning.** Tài liệu gọi đây là ý tưởng tồi; một index thường trên `(category, data)` hầu như luôn tốt hơn, còn bảng quá lớn thì xem xét partitioning[^pg-indexes-partial].
-- **Thiết kế schema NoSQL trước khi biết câu hỏi.** Dấu hiệu: sau khi đưa vào dùng mới phát hiện màn hình quan trọng phải quét cả bảng[^ddb-nosql-design].
+- **Thiết kế schema NoSQL trước khi biết câu hỏi.** Dấu hiệu: sau khi đưa vào dùng mới phát hiện truy vấn quan trọng phải quét cả bảng[^ddb-nosql-design].
 
 ## Ví dụ thực tế
 

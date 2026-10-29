@@ -8,7 +8,7 @@
 
 ```bash
 cd lab
-docker compose up -d postgres   # hoặc dùng PostgreSQL 16 có sẵn
+docker compose up -d postgres   # hoặc PostgreSQL 16 có sẵn: đặt PGPORT (và PGUSER, PGPASSWORD nếu khác lab) cho khớp
 npm install
 node experiments/db-normalization/run.mjs
 ```
