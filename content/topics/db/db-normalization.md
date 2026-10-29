@@ -61,6 +61,8 @@ changelog:
     note: "Sửa câu chữ theo góp ý minor của vòng phản biện 29/10: đoạn đó không còn nói lab áp quy tắc 3NF, và hai dòng changelog trên được ghi lại cho sát thay đổi."
   - date: 2026-10-29
     note: "Phản biện vòng 1 (chặng 1): ghi rõ quy tắc áp vào bảng gộp requests_flat của lab."
+  - date: 2026-10-29
+    note: "Phản biện vòng 2 (chặng 1): không còn blocker hay major; giữ kiểm chứng, giữ verifiedAt cũ vì chỉ các đoạn đã đổi được phản biện."
 ---
 
 ## Vấn đề cần giải quyết

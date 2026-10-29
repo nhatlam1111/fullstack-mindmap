@@ -78,6 +78,8 @@ changelog:
     note: "Sửa câu chữ theo góp ý minor của vòng phản biện 29/10: câu nhắc lab nói lại rằng lab tái hiện trạng thái nửa vời khi không có transaction."
   - date: 2026-10-29
     note: "Phản biện vòng 1 (chặng 1): câu nhắc lab nói đúng là hai lệnh chạy ở chế độ tự commit, mỗi lệnh một transaction riêng."
+  - date: 2026-10-29
+    note: "Phản biện vòng 2 (chặng 1): không còn blocker hay major; giữ kiểm chứng, giữ verifiedAt cũ vì chỉ các đoạn đã đổi được phản biện."
 ---
 
 ## Vấn đề cần giải quyết

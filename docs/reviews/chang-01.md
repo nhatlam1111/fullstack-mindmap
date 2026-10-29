@@ -159,3 +159,65 @@ Tổng: 0 blocker, 1 major, 6 minor.
 - learn-lab dòng 119, 165, 31, 153, 94 (5 minor): giữ nguyên, để lần rà soát bài sau. Không có minor nào làm sai nhận định chính của bài.
 
 Kết luận vòng: không còn blocker hay major chưa xử lý. Cả 4 bài lên `verified`, `verifiedBy: claude`, `verifiedAt: 2026-10-29`.
+
+## Bằng chứng: chạy lab với cổng sai
+
+`learn-lab` dẫn lần chạy này ở mục Lỗi thường gặp. Lệnh, trên máy Lam (Windows 11, Node.js v25.2.1), ngày 29/10/2026, khi không có gì nghe ở cổng 5499:
+
+```bash
+cd lab && PGPORT=5499 node experiments/db-mvcc/run.mjs
+```
+
+Output nguyên văn (mã thoát 1):
+
+```text
+# MVCC và VACUUM trên PostgreSQL
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1134:18)
+    at afterConnectMultiple (node:net:1715:7) {
+  code: 'ECONNREFUSED',
+  [errors]: [
+    Error: connect ECONNREFUSED ::1:5499
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -4078,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '::1',
+      port: 5499
+    },
+    Error: connect ECONNREFUSED 127.0.0.1:5499
+        at createConnectionError (node:net:1678:14)
+        at afterConnectMultiple (node:net:1708:16) {
+      errno: -4078,
+      code: 'ECONNREFUSED',
+      syscall: 'connect',
+      address: '127.0.0.1',
+      port: 5499
+    }
+  ]
+}
+
+Node.js v25.2.1
+```
+
+## Việc tồn cho chặng sau
+
+Các minor để lại dưới đây thành nhóm tồn ở chặng 3 (theo "Quy tắc vòng phản biện" trong `docs/kiem-chung.md`): sửa rồi phản biện thành một nhóm riêng.
+
+- `db-transaction-acid`: dòng 134, 141 và tiêu đề ví dụ dòng 56 còn cách nói "không có transaction"; đổi thành "không có `BEGIN` (mỗi lệnh tự commit)".
+- `db-normalization`: câu hỏi dòng 111 đặt tên `requests` cho bảng có dạng `requests_flat`.
+- `learn-practice-case`: giải thích vCPU-giây, GiB-giây theo đúng bảng giá (tính theo tài nguyên được cấp cho replica), và câu trỏ tới các bài cloud của chặng 19; thêm `cloud-key-vault`, `cloud-iam-rbac` vào `related`.
+- `learn-lab`:
+    - phiên bản Docker Compose v5.5.1 là kết quả lệnh trên máy, không gắn `[^compose-services]`, và trường `version` của hai nguồn Compose không nên ghi v5.5.1 cho tài liệu không có phiên bản;
+    - `supports` của `lab-harness` nói chung "lỗi được in ra", phải chỉ là lỗi câu lệnh SQL;
+    - tiêu chí thứ hai của nút Đã hiểu thiếu vế "hoặc ghi lý do không cần";
+    - dấu hiệu ECONNREFUSED nên ghi thêm Windows 11, hoặc chỉ giữ phần chắc chắn (có `ECONNREFUSED`, không có dòng `Máy chủ:`);
+    - dòng changelog vòng 2 thiếu hai thay đổi (câu hỏi 3, "Cả 17 README").
+- Lab (từ review cả nhánh chặng 1):
+    - 17 README lab PostgreSQL ghi "hoặc dùng PostgreSQL 16 có sẵn" mà không nói phải đặt `PGPORT=5432`; sửa cùng lúc với câu tương ứng trong `learn-lab`.
+    - Cân nhắc thêm vào `header()` của `lab/lib/harness.mjs` một bước dừng khi máy chủ không phải PostgreSQL 16 (trừ khi đặt biến bỏ qua), để không phụ thuộc vào việc người chạy tự đọc dòng `Máy chủ:`.

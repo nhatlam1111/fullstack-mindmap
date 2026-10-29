@@ -59,6 +59,14 @@ Nguồn không mở được thì nhận định dựa vào nó tính là major.
 
 Bài qua 3 vòng vẫn còn blocker hoặc major thì để ở `draft` và báo Lam.
 
+**Quy tắc vòng phản biện** (rút ra từ chặng 1, ngày 29/10/2026):
+
+- Một vòng **sạch** nghĩa là 0 blocker và 0 major. Minor không làm vòng mất sạch.
+- Sửa chữ trong bài sau một vòng (kể cả sửa minor) thì phải có vòng sau cho phần đã sửa. Riêng các dòng metadata (`contentStatus`, `verifiedAt`, `verifiedBy`, một dòng `changelog` ghi kết quả vòng) không cần vòng mới.
+- Vòng 3 là vòng cuối. Sau vòng 3 không viết câu mới. Nếu vòng 3 còn blocker hoặc major, chỉ được xử lý bằng cách xóa phần bị góp ý để đoạn đó trở về đúng câu chữ đã qua một vòng trước mà không có blocker hay major; không làm được như vậy thì bài ở lại `draft`.
+- Bài đã `verified` mà lần này chỉ các đoạn đã đổi được phản biện thì giữ `verifiedAt` cũ. Chỉ đặt `verifiedAt` mới khi cả bài được phản biện.
+- Minor để lại được ghi trong `docs/reviews/chang-NN.md`. Ở chặng kế tiếp, các minor để lại của chặng trước được sửa và phản biện thành một nhóm riêng ("nhóm tồn").
+
 ## Quy trình một chặng
 
 1. **Mở nhánh và xem chặng.** Từ `main` mới nhất, tạo nhánh `bai-hoc/chang-NN`. Liệt kê chủ đề, trạng thái, mục tiêu và bài thực hành của chặng:
@@ -67,16 +75,17 @@ Bài qua 3 vòng vẫn còn blocker hoặc major thì để ở `draft` và báo
    node -e 'const y=require("yaml"),fs=require("fs"),p=require("path");const n=+process.argv[1];const w=y.parse(fs.readFileSync("content/roadmap.yaml","utf8")).weeks.find(x=>x.week===n);console.log(w.title+"\nMục tiêu: "+w.goal+"\nThực hành: "+w.practice);for(const id of w.topics){const f=require("child_process").execSync("git ls-files content/topics").toString().split("\n").find(x=>p.basename(x)===id+".md");const t=fs.readFileSync(f,"utf8");console.log(id,(t.match(/^contentStatus: (.+)$/m)||[])[1],f)}' <N>
    ```
 
-2. **Đọc trước khi viết.** Với mỗi chủ đề chưa `verified`: đọc frontmatter khung (summary, prerequisites, related), `goal` và `practice` của chặng, và các bài đã kiểm chứng liên quan, để không viết trùng và không mâu thuẫn.
-3. **Tìm và đọc nguồn.** Mở đọc toàn văn bằng WebFetch. Ưu tiên tài liệu chính thức đúng phiên bản, rồi đặc tả (RFC, W3C, ECMA), case công khai do chính tổ chức công bố, nghiên cứu gốc. `supports` tóm đúng điều nguồn nói, bằng lời của Claude; `checkedAt` là ngày đọc.
-4. **Viết bài.** Đủ 7 mục, theo giọng và độ sâu của các bài đã kiểm chứng (ví dụ `content/topics/db/db-mvcc.md`). "Câu hỏi tự kiểm tra" là câu hỏi vận dụng. Thêm `changelog` "Claude soạn bài…", đổi `contentStatus` sang `draft`.
-5. **Lab.** Chủ đề có hành vi chạy thử được trên máy (database, HTTP, runtime JavaScript, TypeScript, Git, container, thư viện Node) có lab trong `lab/experiments/<id>/` theo `lab/README.md`: `run.mjs`, `output.txt` nguyên văn, `README.md` có câu hỏi, môi trường, lệnh chạy lại, kết luận chỉ từ output và giới hạn. Lab PostgreSQL dùng `lab/lib/harness.mjs` (cổng 5433). Thêm service hay package thì cố định phiên bản. Chủ đề không chạy thử được dùng tài liệu chính thức hoặc case công khai; không có thì ghi "Chưa có ví dụ thực tế". Chưa có lab gọi LLM cho tới khi Lam quyết ở chặng 25.
-6. **Tự đối chiếu.** Đi qua mục Checklist cho từng bài. `npm run validate` phải kết thúc bằng `· 0 lỗi`. Commit.
-7. **Phản biện theo nhóm.** Chia bài thành nhóm tối đa 5, giữ bài liên quan cùng nhóm. Mỗi nhóm giao một agent mới (Opus) với prompt ở mục Phản biện. Chép báo cáo nguyên văn vào `docs/reviews/chang-NN.md`, viết phần Xử lý.
-8. **Sửa và lặp.** Sửa mọi blocker và major; mở lại nguồn hoặc `output.txt` để so mỗi số hay câu trích đã sửa. Thêm `changelog` "Phản biện vòng M: …". Giao vòng sau cho agent mới, chỉ gồm bài có sửa. Lặp đến khi vòng gần nhất sạch, tối đa 3 vòng mỗi bài. Minor sửa nếu nhanh, nếu không thì ghi "giữ nguyên" kèm lý do.
-9. **Đặt kiểm chứng.** Bài sạch: `contentStatus: verified`, `verifiedBy: claude`, `verifiedAt` là ngày vòng sạch. Commit.
-10. **Release** theo Task 6 của `docs/superpowers/plans/2026-10-29-hoan-thien-bai-hoc.md` và `CLAUDE.md`. Lam đã cho phép publish và push `main` sau mỗi chặng mà không hỏi lại; bước nào lỗi thì dừng và báo Lam.
-11. **Báo Lam.** Bài đã lên `verified`; bài còn `draft` và lý do; lab mới; minor để lại; các chỗ sửa câu chữ `title`, `summary`, `goal`, `practice`; link artifact và Pages.
+2. **Nhận việc tồn.** Đọc `docs/reviews/` của chặng trước. Các minor để lại thành một nhóm phản biện riêng ở bước 8 của chặng này.
+3. **Đọc trước khi viết.** Với mỗi chủ đề chưa `verified`: đọc frontmatter khung (summary, prerequisites, related), `goal` và `practice` của chặng, và các bài đã kiểm chứng liên quan, để không viết trùng và không mâu thuẫn.
+4. **Tìm và đọc nguồn.** Mở đọc toàn văn bằng WebFetch. Ưu tiên tài liệu chính thức đúng phiên bản, rồi đặc tả (RFC, W3C, ECMA), case công khai do chính tổ chức công bố, nghiên cứu gốc. `supports` tóm đúng điều nguồn nói, bằng lời của Claude; `checkedAt` là ngày đọc.
+5. **Viết bài.** Đủ 7 mục, theo giọng và độ sâu của các bài đã kiểm chứng (ví dụ `content/topics/db/db-mvcc.md`). "Câu hỏi tự kiểm tra" là câu hỏi vận dụng. Thêm `changelog` "Claude soạn bài…", đổi `contentStatus` sang `draft`.
+6. **Lab.** Chủ đề có hành vi chạy thử được trên máy (database, HTTP, runtime JavaScript, TypeScript, Git, container, thư viện Node) có lab trong `lab/experiments/<id>/` theo `lab/README.md`: `run.mjs`, `output.txt` nguyên văn, `README.md` có câu hỏi, môi trường, lệnh chạy lại, kết luận chỉ từ output và giới hạn. Lab PostgreSQL dùng `lab/lib/harness.mjs` (cổng 5433). Thêm service hay package thì cố định phiên bản. Chủ đề không chạy thử được dùng tài liệu chính thức hoặc case công khai; không có thì ghi "Chưa có ví dụ thực tế". Chưa có lab gọi LLM cho tới khi Lam quyết ở chặng 25.
+7. **Tự đối chiếu.** Đi qua mục Checklist cho từng bài. `npm run validate` phải kết thúc bằng `· 0 lỗi`. Commit.
+8. **Phản biện theo nhóm.** Chia bài thành nhóm tối đa 5, giữ bài liên quan cùng nhóm. Mỗi nhóm giao một agent mới (Opus) với prompt ở mục Phản biện. Chép báo cáo nguyên văn vào `docs/reviews/chang-NN.md`, viết phần Xử lý.
+9. **Sửa và lặp.** Sửa mọi blocker và major; mở lại nguồn hoặc `output.txt` để so mỗi số hay câu trích đã sửa. Thêm `changelog` "Phản biện vòng M: …". Giao vòng sau cho agent mới, chỉ gồm bài có sửa (phạm vi có thể giới hạn ở `git diff` của phần đã sửa). Lặp theo "Quy tắc vòng phản biện" ở mục Mức độ: tối đa 3 vòng mỗi bài, sau vòng 3 không viết câu mới. Minor sửa nếu nhanh (rồi cần vòng sau), nếu không thì ghi "giữ nguyên" kèm lý do.
+10. **Đặt kiểm chứng.** Bài có vòng gần nhất sạch và không còn chữ nào chưa qua phản biện: `contentStatus: verified`, `verifiedBy: claude`, `verifiedAt` là ngày vòng sạch (bài đã kiểm chứng mà chỉ phản biện phần đã đổi thì giữ `verifiedAt` cũ). Thêm một dòng `changelog` ghi kết quả vòng cuối. Commit.
+11. **Release** theo Task 6 của `docs/superpowers/plans/2026-10-29-hoan-thien-bai-hoc.md` khi làm trên máy Lam (build từ bản clone này, không cần bước đóng gói và môi trường build ở `CLAUDE.md`); các bước publish, kiểm dữ liệu học, ghi `releases.md`, `releases/last-good/` và chép về `MindMap` là của `CLAUDE.md`. Lam đã cho phép publish và push `main` sau mỗi chặng mà không hỏi lại; bước nào lỗi thì dừng và báo Lam.
+12. **Báo Lam.** Bài đã lên `verified`; bài còn `draft` và lý do; lab mới; minor để lại; các chỗ sửa câu chữ `title`, `summary`, `goal`, `practice`; link artifact và Pages.
 
 Chỉ sửa câu chữ `title`, `summary`, `goal`, `practice` khi nguồn cho thấy câu đó sai hoặc khi nó mâu thuẫn với quyết định của Lam; không thêm, bớt, dời chủ đề hay chặng; không đổi id. Chủ đề có mặt ở chặng sau chỉ được xét thêm mục "Đào sâu" khi `goal` của chặng đó đòi hỏi nhiều hơn bài đang có.
 
@@ -91,6 +100,11 @@ Bạn là người phản biện độc lập cho bài học trong repo D:\lam.n
 <danh sách file bài, kèm thư mục lab/experiments/<id>/ nếu có>
 
 Các bài khác trong cùng chặng, để kiểm tra trùng lặp và mâu thuẫn: <danh sách file>
+
+Ghi chú bối cảnh:
+- <số vòng, nơi có báo cáo vòng trước, và phạm vi nếu vòng này chỉ xét phần đã đổi (kèm lệnh git diff); bỏ dòng này nếu là vòng 1 phản biện toàn bài>
+- Nguồn có url dạng https://github.com/nhatlam1111/fullstack-mindmap/blob/main/<đường dẫn> là file của chính repo này. Nhánh đang làm có thể chưa được push, nên hãy đọc file <đường dẫn> ở HEAD trong thư mục làm việc thay cho bản trên GitHub.
+- Với nguồn PDF, WebFetch có thể lưu file nhị phân; trích text bằng `pdftotext -layout <file> <out.txt>` (có sẵn trong Git Bash) rồi đọc.
 
 Với mỗi bài:
 1. Tự mở bằng WebFetch từng nguồn trong `sources` mà bài trích. So từng câu có [^id] với chính nội dung nguồn. Không tin trường `supports`.

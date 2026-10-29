@@ -80,6 +80,8 @@ changelog:
     note: "Sửa câu chữ theo góp ý minor của vòng phản biện 29/10: câu hỏi đó nói rõ schema theo nghĩa bài dùng, và hai dòng changelog trên được ghi lại cho sát thay đổi."
   - date: 2026-10-29
     note: "Phản biện vòng 1 (chặng 1): thay chữ namespace bằng không gian tên của PostgreSQL, thống nhất với thân bài."
+  - date: 2026-10-29
+    note: "Phản biện vòng 2 (chặng 1): không còn blocker hay major; giữ kiểm chứng, giữ verifiedAt cũ vì chỉ các đoạn đã đổi được phản biện."
 ---
 
 ## Vấn đề cần giải quyết

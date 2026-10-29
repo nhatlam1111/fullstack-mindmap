@@ -169,7 +169,7 @@ Expected: lỗi bind cổng 5432 (`port is already allocated` hoặc `bind: ... 
 
 - [ ] **Bước 2: Sửa ba file**
 
-- `docker-compose.yml`: `ports: ["${LAB_PG_PORT:-5433}:5432"]`. Ghi chú: cổng 5432 trên máy Lam đã có PostgreSQL 17.
+- `docker-compose.yml`: `ports: ["127.0.0.1:${LAB_PG_PORT:-5433}:5432"]` (Oracle cũng `127.0.0.1:1521:1521`). Ghi chú: cổng 5432 trên máy Lam đã có PostgreSQL 17; chỉ mở trên 127.0.0.1 vì mật khẩu lab yếu.
 - `harness.mjs`: `port: Number(process.env.PGPORT ?? 5433)`.
 - `lab/README.md`: thay `localhost:5432` bằng `localhost:5433`. Thêm câu: lab cố ý không dùng 5432 để không chạy nhầm vào PostgreSQL có sẵn trên máy.
 
@@ -179,7 +179,7 @@ Expected: lỗi bind cổng 5432 (`port is already allocated` hoặc `bind: ... 
 cd lab && docker compose up -d postgres && npm ci
 ```
 
-Expected: container `postgres` ở trạng thái running. `docker compose ps` cho thấy `0.0.0.0:5433->5432/tcp`.
+Expected: container `postgres` ở trạng thái running. `docker compose ps` cho thấy `127.0.0.1:5433->5432/tcp`.
 
 - [ ] **Bước 4: Chạy thử lab cũ, không ghi đè kết quả đã lưu**
 
@@ -312,7 +312,7 @@ Kiểm: mỗi báo cáo có dòng `Nguồn đã mở:` và liệt kê nguồn. T
 
 - [ ] **Bước 4: Đặt kiểm chứng**
 
-Bài sạch thì đặt `contentStatus: verified`, `verifiedBy: claude` và `verifiedAt` là ngày vòng sạch. Ba bài nhóm B giữ `verifiedAt` cũ nếu vòng B sạch ngay. Có sửa thêm thì cập nhật `verifiedAt`.
+Bài sạch thì đặt `contentStatus: verified`, `verifiedBy: claude` và `verifiedAt` là ngày vòng sạch. Ba bài nhóm B giữ `verifiedAt` cũ, vì chỉ các đoạn đã đổi được phản biện (xem "Quy tắc vòng phản biện" trong `docs/kiem-chung.md`).
 
 Run: `npm run validate`
 Expected: `· 0 lỗi`, và `verified: 19` nếu cả 4 bài qua.
@@ -343,12 +343,12 @@ Các bước dưới đây là quy trình release cho mọi chặng NN.
 
 ```bash
 npm ci && (cd lab && npm ci) && npm run release
-git diff main -U0 | grep -E "^\+" | grep -iE "(api[_-]?key|secret|token|password)\s*[:=]"
+git diff main -U0 | grep -E "^\+" | grep -iE "(api[_-]?key|secret|token|password)\s*[:=]\s*['\"]?[A-Za-z0-9_./+-]{12,}|\b[a-f0-9]{64}\b|AccountKey=|SharedAccessSignature|[?&]sig=|ghp_|github_pat_|sk-ant-|-----BEGIN"
 ```
 
 Expected:
 - `npm run release` qua đủ 7 bước, có `dist/artifact.html` và `dist/release.json`;
-- mỗi dòng lệnh quét in ra chỉ là mật khẩu lab đã biết (`lab`, `lab_app`, `lab_admin`) hoặc chỗ giữ chỗ trong tài liệu (ví dụ `YOUR_API_KEY`). Có dòng khác thì dừng.
+- lệnh quét không in dòng nào, hoặc mỗi dòng in ra chỉ là chỗ giữ chỗ trong tài liệu (ví dụ `YOUR_API_KEY`) hay giá trị không phải bí mật đã kiểm bằng mắt. Có dòng khác thì dừng. Mẫu bắt giá trị thật sau `[:=]` (từ 12 ký tự), chuỗi hex 64 ký tự (dạng key SerpApi), khóa Azure Storage, SAS, token GitHub, key Anthropic và khóa PEM.
 
 Lỗi thì dừng và báo Lam, không publish.
 
