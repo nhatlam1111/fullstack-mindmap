@@ -21,6 +21,23 @@ test('xong chặng thì sang chặng tiếp', async ({ page }) => {
   await page.getByRole('button', { name: 'Xong, sang chặng 2' }).click();
   await expect(page.locator('.week-stamp')).toHaveText('Chặng 2/30');
   await expect(page.getByRole('heading', { name: 'Transaction, isolation, MVCC và locking' })).toBeVisible();
+  await expect(page.locator('#this-week')).toBeFocused();
+});
+
+test('chọn chặng trên Lộ trình giữ chỗ cuộn và đưa focus tới chặng đó', async ({ page }) => {
+  await page.goto(APP);
+  await page.getByRole('button', { name: 'Bắt đầu' }).click();
+  await page.goto(APP + '#roadmap');
+  const btn = page.locator('#week-18').getByRole('button', { name: 'Học chặng này' });
+  await expect(btn).toHaveAccessibleDescription('Git, container và CI/CD');
+  await btn.scrollIntoViewIfNeeded();
+  // vị trí tiêu đề chặng trên màn hình (scrollTop có thể đổi do trình duyệt neo cuộn khi chặng 1 hiện thêm nút)
+  const headTop = () => page.evaluate(() => document.getElementById('wt-18')!.getBoundingClientRect().top);
+  const before = await headTop();
+  await btn.click();
+  await expect(page.locator('.week-stamp')).toHaveText('Chặng 18/30');
+  await expect(page.locator('#wt-18')).toBeFocused();
+  expect(Math.abs((await headTop()) - before)).toBeLessThanOrEqual(2);
 });
 
 test('chặng cuối không có nút sang chặng tiếp', async ({ page }) => {

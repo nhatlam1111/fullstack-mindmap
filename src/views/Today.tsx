@@ -37,7 +37,7 @@ export function Today() {
       {wk && (
         <section className="card" aria-labelledby="this-week">
           <div className="eyebrow">Chặng này</div>
-          <h2 id="this-week">{wk.title}</h2>
+          <h2 id="this-week" tabIndex={-1}>{wk.title}</h2>
           <p className="muted">{wk.goal}</p>
           <p className="small"><strong>Thực hành:</strong> {wk.practice}</p>
           <p className="small"><strong>Mốc kiểm tra:</strong> {wk.checkpoint}</p>
@@ -45,7 +45,7 @@ export function Today() {
           <div className="btn-row">
             <a className="btn" href={`#w${wk.week}`}>Mở trong lộ trình</a>
             {wk.week < total && (
-              <button className="btn primary" type="button" onClick={() => actions.setStage(wk.week + 1)}>Xong, sang chặng {wk.week + 1}</button>
+              <button className="btn primary" type="button" onClick={() => { actions.setStage(wk.week + 1); document.getElementById('this-week')?.focus(); }}>Xong, sang chặng {wk.week + 1}</button>
             )}
           </div>
         </section>

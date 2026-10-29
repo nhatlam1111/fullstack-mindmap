@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { content } from '../content';
 import { useWeek } from '../store/hooks';
 import { actions, useData } from '../store/data';
@@ -7,13 +7,16 @@ import { TopicList } from '../components/TopicList';
 export function Roadmap({ focus }: { focus?: number }) {
   const current = useWeek();
   const ready = useData((s) => s.ready);
-  const target = focus ?? current ?? undefined;
+  const autoScrolled = useRef(false);
+  const scrollTo = (n: number) => document.getElementById(`week-${n}`)?.scrollIntoView({ block: 'start' });
 
+  // link #wN: cuộn tới chặng N; không có thì cuộn tới chặng hiện tại một lần, không nhảy theo mỗi lần đổi chặng
+  useEffect(() => { if (focus) scrollTo(focus); }, [focus]);
   useEffect(() => {
-    if (!target) return;
-    const el = document.getElementById(`week-${target}`);
-    el?.scrollIntoView({ block: 'start' });
-  }, [target]);
+    if (focus || autoScrolled.current || current == null) return;
+    autoScrolled.current = true;
+    scrollTo(current);
+  }, [focus, current]);
 
   return (
     <div className="page">
@@ -31,7 +34,7 @@ export function Roadmap({ focus }: { focus?: number }) {
                 <div className="week-num" aria-hidden="true">{String(n).padStart(2, '0')}</div>
                 <article className="card" aria-labelledby={`wt-${n}`}>
                   <div className="eyebrow tabular">Chặng {n}{current === n ? ' · chặng hiện tại' : ''}</div>
-                  <h3 id={`wt-${n}`} style={{ fontSize: 'var(--fs-lg)' }}>{w.title}</h3>
+                  <h3 id={`wt-${n}`} tabIndex={-1} style={{ fontSize: 'var(--fs-lg)' }}>{w.title}</h3>
                   <dl>
                     <dt>Mục tiêu</dt><dd>{w.goal}</dd>
                     <dt>Thực hành</dt><dd>{w.practice}</dd>
@@ -40,7 +43,10 @@ export function Roadmap({ focus }: { focus?: number }) {
                   <TopicList ids={w.topics} showGroup />
                   {ready && current !== n && (
                     <div className="btn-row">
-                      <button className="btn" type="button" onClick={() => actions.setStage(n)}>Học chặng này</button>
+                      <button
+                        className="btn" type="button" aria-describedby={`wt-${n}`}
+                        onClick={() => { actions.setStage(n); document.getElementById(`wt-${n}`)?.focus({ preventScroll: true }); }}
+                      >Học chặng này</button>
                     </div>
                   )}
                 </article>
