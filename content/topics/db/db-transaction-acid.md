@@ -81,7 +81,9 @@ changelog:
   - date: 2026-10-29
     note: "Phản biện vòng 2 (chặng 1): không còn blocker hay major; giữ kiểm chứng, giữ verifiedAt cũ vì chỉ các đoạn đã đổi được phản biện."
   - date: 2026-10-29
-    note: "Nhóm tồn (chặng 3): mục Ví dụ, tiêu đề ví dụ và câu hỏi tự kiểm tra nói 'không có BEGIN (mỗi lệnh tự commit)' thay cho 'không có transaction', thống nhất với câu nhắc lab."
+    note: "Nhóm tồn (chặng 3): tiêu đề ví dụ, mục Ví dụ, câu hỏi tự kiểm tra và dấu hiệu lỗi trên Oracle nói 'không có BEGIN' thay cho 'không có transaction'; mục Ví dụ ghi rõ mỗi lệnh là một transaction riêng; câu hỏi và kết luận trong README của lab đổi theo."
+  - date: 2026-10-29
+    note: "Phản biện vòng 1 nhóm tồn (chặng 3): 'mỗi lệnh là một transaction riêng' thay cho 'mỗi lệnh tự commit'; 'Có BEGIN' thay cho 'Có transaction' ở mục Ví dụ."
 ---
 
 ## Vấn đề cần giải quyết
@@ -129,14 +131,14 @@ Hệ quả: giữ transaction ngắn, không chờ người dùng thao tác tron
 
 - **Chạy từng lệnh ở chế độ tự commit.** Trên PostgreSQL 16, không có `BEGIN` thì mỗi câu lệnh là một transaction riêng[^pg-tx-tutorial]. Dấu hiệu: có yêu cầu `approved` mà không có dòng lịch sử nào, như bước một của lab.
 - **Bắt lỗi rồi chạy tiếp trên PostgreSQL.** Code nuốt lỗi của một câu lệnh rồi gửi câu tiếp theo sẽ nhận `25P02`. Dấu hiệu: một lỗi ban đầu kéo theo hàng loạt lỗi "transaction is aborted". Cách sửa: rollback, hoặc đặt savepoint trước bước có thể lỗi và `ROLLBACK TO` savepoint đó[^pg-tx-tutorial].
-- **Commit sau lỗi trên Oracle.** Vì chỉ câu lệnh lỗi bị hoàn tác[^ora-transactions], dấu hiệu là dữ liệu nửa vời giống hệt khi không dùng transaction.
+- **Commit sau lỗi trên Oracle.** Vì chỉ câu lệnh lỗi bị hoàn tác[^ora-transactions], dấu hiệu là dữ liệu nửa vời giống hệt khi chạy không có `BEGIN`.
 - **Trộn DDL vào transaction trên Oracle.** Oracle (Release 26) chạy `COMMIT` ngầm trước và sau mỗi câu DDL như `CREATE`, `ALTER`, `DROP`[^ora-transactions]. Dấu hiệu: `ROLLBACK` sau một câu DDL không hoàn tác được các thay đổi dữ liệu trước nó.
 
 ## Ví dụ thực tế
 
 - [ex:lab-acid] — trên PostgreSQL 16.15:
-    - Không có `BEGIN` (mỗi lệnh tự commit): yêu cầu 1 thành `approved` nhưng có 0 dòng lịch sử, vì lệnh thứ hai vi phạm `NOT NULL` (23502).
-    - Có transaction: cùng lỗi đó khiến câu lệnh sau bị từ chối với `25P02`; sau `ROLLBACK`, yêu cầu 2 vẫn `pending`.
+    - Không có `BEGIN` (mỗi lệnh là một transaction riêng): yêu cầu 1 thành `approved` nhưng có 0 dòng lịch sử, vì lệnh thứ hai vi phạm `NOT NULL` (23502).
+    - Có `BEGIN`: cùng lỗi đó khiến câu lệnh sau bị từ chối với `25P02`; sau `ROLLBACK`, yêu cầu 2 vẫn `pending`.
     - Khi cả hai bước đúng, commit lưu cả hai.
 - [ex:pg-transfer] — tài liệu PostgreSQL 16 dùng ví dụ chuyển 100 đô từ tài khoản Alice sang Bob, gồm bốn câu `UPDATE` trên bảng tài khoản và bảng chi nhánh phải cùng thành công[^pg-tx-tutorial].
 

@@ -1,6 +1,6 @@
 # Thử nghiệm: db-transaction-acid
 
-**Câu hỏi.** Duyệt yêu cầu gồm hai bước (đổi trạng thái, ghi lịch sử). Nếu bước hai lỗi thì dữ liệu ra sao khi có và không có transaction?
+**Câu hỏi.** Duyệt yêu cầu gồm hai bước (đổi trạng thái, ghi lịch sử). Nếu bước hai lỗi thì dữ liệu ra sao khi có và không có `BEGIN` (không có `BEGIN` thì mỗi lệnh là một transaction riêng)?
 
 **Môi trường.** PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1), cài sẵn trong môi trường build Linux của Claude; client Node.js v22.22.0 với driver `pg` 8.16.3. Chạy ngày 14/10/2026.
 
@@ -8,15 +8,15 @@
 
 ```bash
 cd lab
-docker compose up -d postgres   # hoặc PostgreSQL 16 có sẵn: đặt PGPORT (và PGUSER, PGPASSWORD nếu khác lab) cho khớp
+docker compose up -d postgres   # hoặc PostgreSQL 16 có sẵn: đặt PGPORT (và PGUSER, PGPASSWORD, PGDATABASE nếu khác lab) cho khớp
 npm install
 node experiments/db-transaction-acid/run.mjs
 ```
 
 **Kết luận từ kết quả dưới đây.**
 
-- Không có transaction: yêu cầu 1 thành `approved` nhưng có 0 dòng lịch sử — dữ liệu nửa vời.
-- Có transaction: sau lỗi ở bước hai, PostgreSQL từ chối mọi lệnh tiếp theo (25P02) cho tới khi rollback; sau rollback yêu cầu 2 vẫn `pending`.
+- Không có `BEGIN` (mỗi lệnh tự commit nếu thành công): yêu cầu 1 thành `approved` nhưng có 0 dòng lịch sử — dữ liệu nửa vời.
+- Có `BEGIN`: sau lỗi ở bước hai, PostgreSQL từ chối mọi lệnh tiếp theo (25P02) cho tới khi rollback; sau rollback yêu cầu 2 vẫn `pending`.
 - Khi cả hai bước đúng, commit lưu cả hai.
 
 **Giới hạn của kết luận.**

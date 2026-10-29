@@ -58,7 +58,7 @@ sources:
   - id: compose-services
     url: https://docs.docker.com/reference/compose-file/services/
     title: "Docker Docs — Compose file reference: services (bản hiện hành, đọc 29/10/2026)"
-    supports: "Tài liệu bản hiện hành; máy của Lam dùng Docker Compose v5.5.1 (lệnh docker compose version, 29/10/2026). Cú pháp ngắn của ports là [HOST:]CONTAINER[/PROTOCOL]; nếu không ghi host IP, Docker gắn vào mọi giao diện (0.0.0.0), bỏ qua luật tường lửa của máy và có thể lộ container ra internet nếu máy có IP công khai. Service có profiles chỉ chạy khi profile đó được bật; service không có profiles luôn chạy. image nhận tag hoặc digest."
+    supports: "Tài liệu bản hiện hành. Cú pháp ngắn của ports là [HOST:]CONTAINER[/PROTOCOL]; nếu không ghi host IP, Docker gắn vào mọi giao diện (0.0.0.0), bỏ qua luật tường lửa của máy và có thể lộ container ra internet nếu máy có IP công khai. Service có profiles chỉ chạy khi profile đó được bật; service không có profiles luôn chạy. image nhận tag hoặc digest."
     product: Docker Compose
     version: "tài liệu bản hiện hành, đọc 29/10/2026"
     checkedAt: 2026-10-29
@@ -98,6 +98,8 @@ changelog:
     note: "Phản biện vòng 3: không còn blocker hay major, 5 minor để lại cho lần rà soát sau (ghi ở docs/reviews/chang-01.md); kiểm chứng."
   - date: 2026-10-29
     note: "Nhóm tồn (chặng 3): phiên bản Docker Compose ghi là kết quả lệnh trên máy, không gắn vào nguồn tài liệu; sửa supports của lab-harness; tiêu chí Đã hiểu ghi đủ ba vế; dấu hiệu ECONNREFUSED ghi thêm Windows 11 và nơi lưu output; câu về README khớp gợi ý PGPORT mới trong 17 README. Bổ sung cho dòng vòng 2: lần đó còn viết lại câu hỏi về phiên bản đầy đủ và ghi đủ 17 README."
+  - date: 2026-10-29
+    note: "Phản biện vòng 1 nhóm tồn (chặng 3): bỏ ý về máy của Lam khỏi supports của nguồn Compose; gợi ý dùng PostgreSQL có sẵn nhắc cả PGDATABASE."
 ---
 
 ## Vấn đề cần giải quyết
@@ -168,7 +170,7 @@ node experiments/db-mvcc/run.mjs
 ## Lỗi thường gặp và dấu hiệu nhận biết
 
 - **Lab chạy nhầm vào một PostgreSQL khác.** Dấu hiệu: dòng `Máy chủ:` không phải PostgreSQL 16, hoặc lỗi xác thực cho user `lab`. Lab mặc định dùng cổng 5433 để tránh PostgreSQL có sẵn ở 5432[^lab-readme]; nếu bạn đặt `PGPORT`, kiểm lại dòng `Máy chủ:` trước khi dùng kết quả.
-- **Dùng một PostgreSQL 16 có sẵn thay cho container mà quên đặt cổng.** Cả 17 README lab PostgreSQL cho phép dùng PostgreSQL 16 có sẵn thay cho container, và nhắc đặt `PGPORT` (cùng `PGUSER`, `PGPASSWORD` nếu khác `lab`) cho khớp. Harness mặc định cổng 5433[^lab-harness], nên với PostgreSQL ở cổng 5432 bạn phải đặt `PGPORT=5432`. Dấu hiệu quên: khi không có gì nghe ở cổng đó, script in dòng tiêu đề rồi dừng với `AggregateError [ECONNREFUSED]` và không có dòng `Máy chủ:` (chạy thử lab MVCC với `PGPORT=5499` trên máy Lam, Windows 11, Node.js v25.2.1, ngày 29/10/2026; output nguyên văn lưu ở `docs/reviews/chang-01.md`). Đặt xong thì kiểm dòng `Máy chủ:`.
+- **Dùng một PostgreSQL 16 có sẵn thay cho container mà quên đặt cổng.** Cả 17 README lab PostgreSQL cho phép dùng PostgreSQL 16 có sẵn thay cho container, và nhắc đặt `PGPORT` (cùng `PGUSER`, `PGPASSWORD`, `PGDATABASE` nếu khác `lab`) cho khớp. Harness mặc định cổng 5433[^lab-harness], nên với PostgreSQL ở cổng 5432 bạn phải đặt `PGPORT=5432`. Dấu hiệu quên: khi không có gì nghe ở cổng đó, script in dòng tiêu đề rồi dừng với `AggregateError [ECONNREFUSED]` và không có dòng `Máy chủ:` (chạy thử lab MVCC với `PGPORT=5499` trên máy Lam, Windows 11, Node.js v25.2.1, ngày 29/10/2026; output nguyên văn lưu ở `docs/reviews/chang-01.md`). Đặt xong thì kiểm dòng `Máy chủ:`.
 - **Đổi `POSTGRES_USER`, `POSTGRES_PASSWORD` hay `POSTGRES_DB` mà không thấy tác dụng.** Các biến này chỉ có tác dụng khi container khởi động với thư mục dữ liệu rỗng[^postgres-image]. Volume `pgdata` đã có dữ liệu thì database cũ được giữ nguyên.
 - **Mở cổng ra mọi giao diện mạng.** Nếu `ports` không ghi host IP, Docker gắn vào `0.0.0.0` và bỏ qua tường lửa của máy[^compose-services]. Với mật khẩu yếu như `lab`, máy khác trong mạng có thể kết nối vào. Dấu hiệu: dòng `ports` bắt đầu bằng số cổng, như `5433:5432`, thay vì bằng IP, như `127.0.0.1:5433:5432`. Lab ghi rõ `127.0.0.1`[^lab-compose].
 - **`LAB_PG_PORT` không đổi như mong muốn.** Biến môi trường của shell được ưu tiên hơn file `.env`[^compose-interpolation]. Dấu hiệu: bạn sửa `.env` mà cổng không đổi.
