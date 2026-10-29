@@ -1,5 +1,6 @@
 // Bộ chạy thử nghiệm: mở nhiều phiên PostgreSQL, in từng câu lệnh và kết quả thật.
-// Kết nối mặc định khớp lab/docker-compose.yml; đổi bằng biến môi trường PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE.
+// Kết nối mặc định khớp lab/docker-compose.yml (cổng 5433, không phải 5432, để không chạy nhầm vào PostgreSQL có sẵn trên máy);
+// đổi bằng biến môi trường PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE.
 import pg from 'pg';
 import { createRequire } from 'node:module';
 
@@ -7,7 +8,7 @@ const pgVersion = createRequire(import.meta.url)('pg/package.json').version;
 
 export const config = {
   host: process.env.PGHOST ?? 'localhost',
-  port: Number(process.env.PGPORT ?? 5432),
+  port: Number(process.env.PGPORT ?? 5433),
   user: process.env.PGUSER ?? 'lab',
   password: process.env.PGPASSWORD ?? 'lab',
   database: process.env.PGDATABASE ?? 'lab',

@@ -7,7 +7,9 @@ services:
       POSTGRES_USER: lab
       POSTGRES_PASSWORD: lab
       POSTGRES_DB: lab
-    ports: ["5432:5432"]
+    # Cổng 5432 trên máy Lam đã có PostgreSQL 17 cài sẵn; lab dùng 5433 (đổi bằng LAB_PG_PORT).
+    # Chỉ mở trên 127.0.0.1: mật khẩu lab yếu, không để máy khác trong mạng kết nối vào.
+    ports: ["127.0.0.1:${LAB_PG_PORT:-5433}:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
 
   oracle:
@@ -18,7 +20,7 @@ services:
       ORACLE_PASSWORD: lab_admin
       APP_USER: lab
       APP_USER_PASSWORD: lab
-    ports: ["1521:1521"]
+    ports: ["127.0.0.1:1521:1521"]
     volumes: ["oradata:/opt/oracle/oradata"]
     profiles: ["oracle"]
 
