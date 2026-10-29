@@ -52,6 +52,8 @@ changelog:
     note: Claude soạn bài từ nghiên cứu Roediger & Karpicke (2006), phần tóm tắt của Dunlosky và cộng sự (2013) và mã nguồn mindmap 0.1.0.
   - date: 2026-10-29
     note: "Phản biện vòng 1: mô tả đúng nhóm STTT (một khoảng đọc 5 phút rồi ba lần tự nhớ lại); bỏ ý không có ai chấm; ghi rõ bước nào ứng với tiêu chí nào; validator chỉ kiểm bài đã có nội dung, thêm nguồn content.ts."
+  - date: 2026-10-29
+    note: "Phản biện vòng 2: liệt kê đủ năm loại ví dụ; thêm bước trả lời mục Câu hỏi tự kiểm tra vào luồng học; nối đúng câu 2 với tự hỏi vì sao và bước ghi chú với tự giải thích."
 ---
 
 ## Vấn đề cần giải quyết
@@ -81,7 +83,7 @@ Sáu câu hỏi dưới đây là cách mindmap này buộc người học tự 
 | 2. Cơ chế | Cơ chế và luồng hoạt động |
 | 3. Đánh đổi, 4. Khi nào không dùng | Điều kiện áp dụng, lợi ích và đánh đổi |
 | 5. Lỗi thường gặp | Lỗi thường gặp và dấu hiệu nhận biết |
-| 6. Cách kiểm chứng | Ví dụ thực tế (lab, case công khai, tài liệu chính thức) và Chủ đề liên quan và nguồn kiểm chứng |
+| 6. Cách kiểm chứng | Ví dụ thực tế (case công khai, tài liệu chính thức, nghiên cứu, lab, số đo từ bài thực hành) và Chủ đề liên quan và nguồn kiểm chứng |
 
 Mục "Câu hỏi tự kiểm tra" là nơi bạn tự trả lời lại các câu hỏi đó, áp vào tình huống cụ thể.
 
@@ -91,13 +93,14 @@ Mục "Câu hỏi tự kiểm tra" là nơi bạn tự trả lời lại các c�
 2. Mở lại bài, so câu trả lời. Chỗ nào bạn chưa trả lời được, chỗ đó là phần chưa hiểu.
 3. Với câu 6, chạy lại lab hoặc đọc ví dụ thực tế, thay vì tin nhận định trong bài.
 4. Ghi chú lời giải thích của bạn vào ô ghi chú của bài.
+5. Cuối cùng, trả lời mục "Câu hỏi tự kiểm tra" mà không xem bài.
 
-Bước 1, 3 và 4 ứng với ba tiêu chí của nút "Đánh dấu Đã hiểu" trong mindmap 0.1.0: trả lời câu hỏi tự kiểm tra mà không xem bài, chạy lại thử nghiệm hoặc đọc kỹ ví dụ, và ghi chú bằng lời của mình[^mindmap-understood]. Bước 2 là cách bạn tự biết mình đã đạt tiêu chí thứ nhất hay chưa.
+Bước 5, 3 và 4 ứng với ba tiêu chí của nút "Đánh dấu Đã hiểu" trong mindmap 0.1.0: trả lời câu hỏi tự kiểm tra mà không xem bài, chạy lại thử nghiệm hoặc đọc kỹ ví dụ, và ghi chú bằng lời của mình[^mindmap-understood]. Bước 1 và 2 là phần luyện trước khi tự kiểm tra.
 
 **Vì sao tự trả lời hiệu quả hơn đọc lại.** Nghiên cứu về trí nhớ cho thấy hai điều:
 
 - Tự nhớ lại (retrieval, hay practice testing) giúp nhớ lâu hơn đọc lại, kể cả khi người học không nhận được phản hồi về bài làm của mình[^roediger-2006]. Một bài tổng quan 10 kỹ thuật học xếp practice testing vào nhóm hữu ích cao, còn đọc lại và tô đậm vào nhóm thấp[^dunlosky-2013].
-- Tự hỏi "vì sao" (elaborative interrogation) và tự giải thích (self-explanation) được đánh giá ở mức hữu ích trung bình, vì bằng chứng còn hạn chế[^dunlosky-2013]. Câu 2 và câu 4 dựa vào hai kỹ thuật này, nên coi chúng là hỗ trợ, còn phần cốt lõi vẫn là tự trả lời không nhìn bài.
+- Tự hỏi "vì sao" (elaborative interrogation) và tự giải thích (self-explanation) được đánh giá ở mức hữu ích trung bình, vì bằng chứng còn hạn chế[^dunlosky-2013]. Câu 2 (vì sao) dựa vào tự hỏi vì sao, còn bước 4 của luồng học (ghi chú tự giải thích) dựa vào tự giải thích. Nên coi hai phần này là hỗ trợ, còn phần cốt lõi vẫn là tự trả lời không nhìn bài.
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 

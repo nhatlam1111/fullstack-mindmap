@@ -91,7 +91,7 @@ sources:
   - id: mm-today
     url: https://github.com/nhatlam1111/fullstack-mindmap/blob/main/src/views/Today.tsx
     title: "fullstack-mindmap — src/views/Today.tsx"
-    supports: "Trang Hôm nay cho chọn chặng bắt đầu, hiện chặng hiện tại và nút Xong, sang chặng kế tiếp; có thẻ Tiếp tục với bài mở gần nhất và danh sách Đang học; tiến độ là số chủ đề Đã hiểu trên số chủ đề đã có bài hoặc thuộc các chặng bạn đã tới. Chặng hiện tại đổi được ở trang Lộ trình hoặc mục Dữ liệu học. Khi chưa đăng nhập claude.ai, app báo dữ liệu học chỉ lưu trên trình duyệt này; khi trang chạy ngoài claude.ai, dữ liệu chỉ lưu trên trình duyệt này và không đồng bộ sang thiết bị khác."
+    supports: "Trang Hôm nay cho chọn chặng bắt đầu, hiện chặng hiện tại và nút Xong, sang chặng kế tiếp; có thẻ Tiếp tục với bài mở gần nhất và danh sách Đang học; tiến độ là số chủ đề Đã hiểu trên số chủ đề đã có bài hoặc thuộc các chặng bạn đã tới. Chặng hiện tại đổi được ở trang Lộ trình hoặc mục Dữ liệu học. Khi chưa đăng nhập claude.ai, app báo dữ liệu học chỉ lưu trên trình duyệt này; khi trang chạy ngoài claude.ai, dữ liệu chỉ lưu trên trình duyệt này và không đồng bộ sang thiết bị khác; cả hai trường hợp hiện thông báo Chế độ cục bộ. Thông báo Nhắc sao lưu hiện khi đã có dữ liệu học mà chưa xuất file sao lưu lần nào hoặc lần gần nhất quá 30 ngày."
     product: fullstack-mindmap
     version: "0.1.0"
     checkedAt: 2026-10-29
@@ -106,6 +106,8 @@ changelog:
     note: Claude soạn bài từ README, CLAUDE.md, docs/kiem-chung.md và mã nguồn mindmap 0.1.0.
   - date: 2026-10-29
     note: "Phản biện vòng 1: bỏ ý đồng bộ không có nguồn, nêu trường hợp chưa đăng nhập claude.ai; gắn nhãn Ôn tập và Gộp, Thay thế vào đúng file; giữ đủ điều kiện kiểm chứng và trường hợp bài ở lại Nháp; nêu việc mở bài ghi bài mở gần nhất; ghi rõ ví dụ MVCC theo quy trình trước 29/10."
+  - date: 2026-10-29
+    note: "Phản biện vòng 2: ghi phiên bản mindmap 0.1.0 ở mục Cơ chế; dùng thông báo Chế độ cục bộ và Nhắc sao lưu làm dấu hiệu; bỏ suy luận nhân quả ở ví dụ MVCC."
 ---
 
 ## Vấn đề cần giải quyết
@@ -118,6 +120,8 @@ Mindmap này vừa là tài liệu, vừa là nơi theo dõi việc học. Hai v
 Nếu không tách hai loại trạng thái, bạn dễ học thuộc một bài nháp còn sai, hoặc đánh dấu "đã hiểu" chỉ vì đã đọc. Bài này giải thích từng trạng thái, điều kiện để chuyển trạng thái, và cách bài được biên soạn.
 
 ## Cơ chế và luồng hoạt động
+
+Mọi hành vi của app mô tả dưới đây là của mindmap 0.1.0.
 
 **Trạng thái nội dung** cho biết bài đáng tin tới đâu[^mm-content-labels]:
 
@@ -185,11 +189,11 @@ Muốn chuyển dữ liệu giữa hai nơi, xuất file sao lưu `.json` ở m�
 - **Tick ba tiêu chí cho có.** Dấu hiệu: ô ghi chú trống hoặc chép nguyên văn bài, hay gấp bài lại thì không trả lời được câu hỏi tự kiểm tra.
 - **Chọn "Nhớ rõ" khi thật ra chỉ thấy quen.** Dấu hiệu: bài lên 60 hoặc 150 ngày rồi lần ôn sau không nhớ gì. Chọn "Mơ hồ" hoặc "Quên" khi không tự trả lời được.
 - **Bỏ qua dải "Có thể đã cũ".** Dấu hiệu: bài quá hạn rà soát theo độ ổn định của nó[^mm-review-months]. Với bài Thay đổi nhanh (cloud, AI), nhận định về sản phẩm có thể đã khác.
-- **Chỉ dùng bản GitHub Pages mà không sao lưu.** Dấu hiệu: dữ liệu học nằm trong một trình duyệt duy nhất[^mm-readme]. Xóa dữ liệu trình duyệt hay đổi máy là mất. Xuất file `.json` định kỳ, hoặc dùng bản artifact.
+- **Chỉ dùng bản GitHub Pages mà không sao lưu.** Dấu hiệu: trang Hôm nay hiện "Chế độ cục bộ", và hiện "Nhắc sao lưu" khi bạn chưa xuất file sao lưu lần nào hoặc lần gần nhất đã quá 30 ngày[^mm-today]. Ở chế độ đó, dữ liệu học chỉ nằm trong trình duyệt này[^mm-readme]; xóa dữ liệu trình duyệt hay đổi máy là mất. Xuất file `.json` định kỳ, hoặc dùng bản artifact.
 
 ## Ví dụ thực tế
 
-- [ex:mvcc-history] — lịch sử bài MVCC trong repo cho thấy một bài đi qua soạn, kiểm chứng và phản biện thế nào. Bài này được kiểm chứng ngày 15/10/2026, trước khi checklist trong `docs/kiem-chung.md` được dựng lại (29/10/2026), nên vòng đầu được ghi là "Kiểm chứng" thay vì "Phản biện vòng 1":
+- [ex:mvcc-history] — lịch sử bài MVCC trong repo cho thấy một bài đi qua soạn, kiểm chứng và phản biện thế nào. Bài này được kiểm chứng ngày 15/10/2026, trước khi checklist trong `docs/kiem-chung.md` được dựng lại (29/10/2026); dòng của vòng đầu ghi là "Kiểm chứng", không phải "Phản biện vòng 1":
     - `changelog` có dòng ngày 14/10/2026: Claude soạn bản nháp đầu và chạy thử nghiệm trên PostgreSQL 16.15.
     - Cùng ngày có dòng "Kiểm chứng", rồi ngày 15/10/2026 có "Phản biện vòng 2" và "Phản biện vòng 3". Mỗi dòng ghi những gì đã sửa, ví dụ sửa câu "đọc không cần khóa" thành "khóa đọc không xung đột với khóa ghi".
     - Frontmatter có `contentStatus: verified`, `verifiedAt: 2026-10-15`, `verifiedBy: claude`. Đây là thông tin app dùng để hiện nhãn "Claude kiểm chứng" kèm ngày[^mm-article].
