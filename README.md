@@ -10,7 +10,7 @@ App chạy ở hai nơi:
 
 | Đường dẫn | Nội dung |
 | --- | --- |
-| `content/branches.yaml` | 8 nhánh và các nhóm |
+| `content/branches.yaml` | 11 nhánh và các nhóm |
 | `content/roadmap.yaml` | Các chặng của lộ trình: mục tiêu, bài thực hành, mốc kiểm tra, chủ đề |
 | `content/topics/<nhánh>/<id>.md` | Một chủ đề một file: frontmatter + 7 mục của bài |
 | `content/ids.lock` | Mọi id từng có; build tự ghi thêm, không xóa dòng |

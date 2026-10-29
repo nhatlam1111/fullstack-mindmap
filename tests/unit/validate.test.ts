@@ -46,6 +46,10 @@ describe('validate-content', () => {
     write('content/roadmap.yaml', roadmap([1, 2, 4], ['t1']));
     expect(run().errors.join('\n')).toMatch(/chặng 3 xuất hiện 0 lần/);
   });
+  it('bắt chặng trùng số', () => {
+    write('content/roadmap.yaml', roadmap([1, 2, 2], ['t1'], [1, 2]));
+    expect(run().errors.join('\n')).toMatch(/chặng 2 xuất hiện 2 lần/);
+  });
   it('bắt giai đoạn không phủ đủ chặng', () => {
     write('content/roadmap.yaml', roadmap([1, 2], ['t1'], [1]));
     expect(run().errors.join('\n')).toMatch(/phủ đúng chặng 1–2/);
