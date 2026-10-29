@@ -3,7 +3,9 @@ id: learn-six-questions
 title: Sáu câu hỏi khi học một công nghệ
 parent: learn-method
 summary: "Bộ câu hỏi dùng cho mọi chủ đề: vấn đề, cơ chế, đánh đổi, khi nào không dùng, lỗi thường gặp, cách kiểm chứng."
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-10-29
+verifiedBy: claude
 volatility: stable
 prerequisites: []
 related:
@@ -54,6 +56,8 @@ changelog:
     note: "Phản biện vòng 1: mô tả đúng nhóm STTT (một khoảng đọc 5 phút rồi ba lần tự nhớ lại); bỏ ý không có ai chấm; ghi rõ bước nào ứng với tiêu chí nào; validator chỉ kiểm bài đã có nội dung, thêm nguồn content.ts."
   - date: 2026-10-29
     note: "Phản biện vòng 2: liệt kê đủ năm loại ví dụ; thêm bước trả lời mục Câu hỏi tự kiểm tra vào luồng học; nối đúng câu 2 với tự hỏi vì sao và bước ghi chú với tự giải thích."
+  - date: 2026-10-29
+    note: "Phản biện vòng 3: không còn blocker hay major; kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết

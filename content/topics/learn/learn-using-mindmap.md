@@ -3,7 +3,9 @@ id: learn-using-mindmap
 title: Cách dùng mindmap này
 parent: learn-method
 summary: Trạng thái nội dung, trạng thái học, tiêu chí Đã hiểu và quy trình biên soạn bài.
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-10-29
+verifiedBy: claude
 volatility: stable
 prerequisites: []
 related:
@@ -108,6 +110,8 @@ changelog:
     note: "Phản biện vòng 1: bỏ ý đồng bộ không có nguồn, nêu trường hợp chưa đăng nhập claude.ai; gắn nhãn Ôn tập và Gộp, Thay thế vào đúng file; giữ đủ điều kiện kiểm chứng và trường hợp bài ở lại Nháp; nêu việc mở bài ghi bài mở gần nhất; ghi rõ ví dụ MVCC theo quy trình trước 29/10."
   - date: 2026-10-29
     note: "Phản biện vòng 2: ghi phiên bản mindmap 0.1.0 ở mục Cơ chế; dùng thông báo Chế độ cục bộ và Nhắc sao lưu làm dấu hiệu; bỏ suy luận nhân quả ở ví dụ MVCC."
+  - date: 2026-10-29
+    note: "Phản biện vòng 3: không còn blocker hay major; kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết

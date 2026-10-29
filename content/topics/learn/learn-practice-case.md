@@ -3,7 +3,9 @@ id: learn-practice-case
 title: "Case: hệ thống nghiên cứu thị trường game mobile"
 parent: learn-practice
 summary: "Bài thực hành xuyên suốt: thu thập bảng xếp hạng game Google Play qua SerpApi, thống kê game lớn nhất và mới nổi, đề xuất thể loại; chạy trên Azure, công khai trên GitHub."
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-10-29
+verifiedBy: claude
 volatility: fast
 prerequisites: []
 related:
@@ -68,6 +70,8 @@ changelog:
     note: "Phản biện vòng 1: nói đúng mức điều khoản Google và thêm đánh đổi khi dùng SerpApi; ghi rõ phản hồi mẫu là kết quả tìm kiếm, chưa biết phản hồi chart có rating và downloads; viết lại cách hạn mức bị tính và câu hỏi tương ứng; ghi ngày đọc bảng giá SerpApi; gắn nguồn cho lý do chọn app và cách đổi mốc lượt tải."
   - date: 2026-10-29
     note: "Phản biện vòng 2: ghi ngày đọc tài liệu SerpApi; giải thích free grant, vCPU-giây, GiB-giây và trỏ tới các bài cloud của chặng 19."
+  - date: 2026-10-29
+    note: "Phản biện vòng 3: bỏ câu giải thích vCPU-giây, GiB-giây (mô tả sai một phần cách Azure tính) và câu trỏ tới bài cloud của chặng 19; đoạn đó trở về bản đã qua vòng 2, chỉ giữ giải thích free grant. Không còn blocker hay major; kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết
@@ -113,7 +117,7 @@ Cái khó đầu tiên là nguồn dữ liệu. Điều khoản Google (hiệu l
 
 **Hạ tầng**[^mm-practice-design]: repo công khai trên GitHub, CI/CD bằng GitHub Actions. API và web chạy trên Azure Container Apps, nhập hằng tuần bằng Container Apps job, database là PostgreSQL managed. SerpApi key nằm trong Key Vault, app đọc bằng managed identity. GitHub Actions đăng nhập Azure qua OIDC federation, không lưu secret của Azure trong GitHub.
 
-Container Apps gói Consumption có free grant, tức lượng dùng miễn phí mỗi tháng, tính trên mỗi subscription: 180.000 vCPU-giây, 360.000 GiB-giây và 2 triệu request (bảng giá đọc ngày 29/10/2026)[^aca-pricing]. vCPU-giây và GiB-giây là đơn vị tính theo số vCPU và số GiB bộ nhớ mà app dùng, nhân với số giây chạy. Managed identity, Key Vault và OIDC federation được học ở chặng 19, trong các bài `cloud-managed-identity`, `cloud-key-vault` và `cloud-iam-rbac`.
+Container Apps gói Consumption có free grant, tức lượng dùng miễn phí mỗi tháng, tính trên mỗi subscription: 180.000 vCPU-giây, 360.000 GiB-giây và 2 triệu request (bảng giá đọc ngày 29/10/2026)[^aca-pricing].
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 

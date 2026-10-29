@@ -3,7 +3,9 @@ id: learn-lab
 title: Lab thử nghiệm
 parent: learn-practice
 summary: Môi trường cố định để chạy thử nghiệm và ghi lại kết quả thật.
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-10-29
+verifiedBy: claude
 volatility: stable
 prerequisites: []
 related:
@@ -92,6 +94,8 @@ changelog:
     note: "Phản biện vòng 1: commit cấu hình lab mà bài mô tả; liệt kê đủ năm loại ví dụ; sửa mô tả mốc thời gian của harness, lệnh của lab LSM; ghi rõ chưa có lần chạy nào trong Docker; thêm lỗi quên đặt PGPORT khi dùng PostgreSQL có sẵn; ghi phiên bản Docker Compose."
   - date: 2026-10-29
     note: "Phản biện vòng 2: chỉ lỗi câu lệnh SQL được in ra, lỗi kết nối làm script dừng; dấu hiệu quên PGPORT lấy từ một lần chạy thật; thêm dấu hiệu cho lỗi mở cổng ra mọi giao diện; nói đúng mức về tag postgres:16 và về giá trị khác giữa các lần chạy; gắn nguồn cho tiêu chí Đã hiểu; ghi Docker Compose v5.5.1 trong bài và ở trường version."
+  - date: 2026-10-29
+    note: "Phản biện vòng 3: không còn blocker hay major, 5 minor để lại cho lần rà soát sau (ghi ở docs/reviews/chang-01.md); kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết
