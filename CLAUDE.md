@@ -14,7 +14,7 @@ App publish thành artifact private: https://claude.ai/artifact/4TNPENW2kRQLTwQ3
 
 ## Quy tắc nội dung (bắt buộc)
 
-- Từ 15/10/2026 Lam giao Claude hoàn thiện và kiểm chứng bài. Claude chỉ đặt `contentStatus: verified` kèm `verifiedBy: claude` khi bài đã qua đủ checklist kiểm chứng (mục 6 của plan) và vòng phản biện độc lập gần nhất không còn phát hiện mức blocker hay major chưa xử lý. Bài Lam tự kiểm chứng dùng `verifiedBy: lam`. Việc học vẫn do Lam: nút "Đã hiểu" đòi tự trả lời câu hỏi, làm thử nghiệm và ghi chú bằng lời của mình.
+- Từ 15/10/2026 Lam giao Claude hoàn thiện và kiểm chứng bài. Claude chỉ đặt `contentStatus: verified` kèm `verifiedBy: claude` khi bài đã qua đủ checklist kiểm chứng trong `docs/kiem-chung.md` và vòng phản biện độc lập gần nhất không còn phát hiện mức blocker hay major chưa xử lý. Quy trình viết, phản biện và release từng chặng cũng nằm ở đó. Bài Lam tự kiểm chứng dùng `verifiedBy: lam`. Việc học vẫn do Lam: nút "Đã hiểu" đòi tự trả lời câu hỏi, làm thử nghiệm và ghi chú bằng lời của mình.
 - Mọi nhận định quan trọng có nguồn đã mở đọc (không dùng snippet tìm kiếm), gắn `[^id]`. Hành vi sản phẩm luôn kèm tên và phiên bản.
 - **Ví dụ chỉ từ thực tế**: case công khai do chính tổ chức công bố, tài liệu chính thức, thử nghiệm chạy thật trong `lab/experiments/<id>/` (README ghi môi trường, lệnh, output nguyên văn), hoặc số đo thật từ bài thực hành. Không tự nghĩ kịch bản, công ty, log, số liệu, kể cả khi gắn nhãn minh họa. Không có thì ghi "Chưa có ví dụ thực tế".
 - Không đổi id chủ đề; đổi thì thêm id cũ vào `previousIds` của chủ đề mới (hoặc `content/deleted-ids.yaml` nếu xóa).
