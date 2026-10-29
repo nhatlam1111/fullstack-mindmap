@@ -94,7 +94,7 @@ describe('đồng bộ kho dữ liệu', () => {
 
 describe('chặng hiện tại', () => {
   const meta = () => selectMeta(viewDocs(useData.getState()));
-  const withDocs = (docs: Docs) => { __resetForTests(); const b2 = new FakeBackend(); b2.docs = docs; __setBackendForTests(b2); return b2; };
+  const withDocs = (docs: Docs, failNext = 0) => { __resetForTests(); const b2 = new FakeBackend(); b2.docs = docs; b2.failNext = failNext; __setBackendForTests(b2); return b2; };
   beforeEach(() => { __resetForTests(); __setBackendForTests(new FakeBackend()); });
 
   it('meta cũ chỉ có startDate: ghi currentStage một lần', async () => {
@@ -124,5 +124,45 @@ describe('chặng hiện tại', () => {
     expect(meta().currentStage).toBe(9);
     actions.importBackup({}, m(12), 'replace');
     expect(meta().currentStage).toBe(12);
+  });
+
+  it('meta: thiết bị khác đổi chặng trong lúc chờ, ở đây chỉ ghi trường mình sửa', async () => {
+    const b2 = withDocs({ meta: { schemaVersion: 1, currentStage: 3, updatedAt: '2026-10-01T00:00:00.000Z' } }, 1);
+    actions.opened('db-mvcc');
+    await __flushNow();
+    b2.docs = { ...b2.docs, meta: { schemaVersion: 1, currentStage: 7, updatedAt: '2026-10-02T00:00:00.000Z' } };
+    b2.emit();
+    await __flushNow();
+    expect(b2.docs.meta).toMatchObject({ currentStage: 7, lastTopicId: 'db-mvcc' });
+  });
+
+  it('meta: bước migrate không đè chặng thiết bị khác vừa đặt', async () => {
+    const startDate = addDays(today(), -14);
+    const b2 = withDocs({ meta: { schemaVersion: 1, startDate, updatedAt: '2026-10-01T00:00:00.000Z' } }, 1);
+    await __flushNow();
+    b2.docs = { meta: { schemaVersion: 1, startDate, currentStage: 7, updatedAt: '2026-10-02T00:00:00.000Z' } };
+    b2.emit();
+    await __flushNow();
+    expect((b2.docs.meta as { currentStage: number }).currentStage).toBe(7);
+  });
+
+  it('meta: hàng chờ của bản cũ không xóa trường thiết bị khác đã thêm', async () => {
+    const b2 = withDocs({ meta: { schemaVersion: 1, currentStage: 7, updatedAt: '2026-10-02T00:00:00.000Z' } });
+    useData.setState({ queue: { meta: { data: { schemaVersion: 1, lastTopicId: 'db-mvcc', updatedAt: '2026-10-01T00:00:00.000Z' }, at: 1, readyAt: 0, base: '2026-09-30T00:00:00.000Z' } } });
+    await __flushNow();
+    expect(b2.docs.meta).toMatchObject({ currentStage: 7, lastTopicId: 'db-mvcc' });
+  });
+
+  it('meta: nhập thay thế trong lúc thiết bị khác vừa ghi vẫn bỏ được trường', async () => {
+    const b2 = withDocs({ meta: { schemaVersion: 1, currentStage: 3, startDate: '2026-10-01', updatedAt: '2026-10-01T00:00:00.000Z' } }, 1);
+    actions.importBackup({}, { schemaVersion: 1, updatedAt: '2026-10-29T00:00:00.000Z', lastTopicId: 'db-mvcc' }, 'replace');
+    await __flushNow();
+    b2.docs = { meta: { schemaVersion: 1, currentStage: 7, startDate: '2026-10-01', lastBackupAt: '2026-10-02', updatedAt: '2026-10-02T00:00:00.000Z' } };
+    b2.emit();
+    await __flushNow();
+    const m = b2.docs.meta as Record<string, unknown>;
+    expect(m.currentStage).toBeUndefined();
+    expect(m.startDate).toBeUndefined();
+    expect(m).toMatchObject({ lastTopicId: 'db-mvcc', lastBackupAt: '2026-10-02' });
   });
 });

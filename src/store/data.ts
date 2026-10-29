@@ -14,8 +14,15 @@ const QUEUE_KEY = 'fsmap:queue:v1';
 const CACHE_KEY = 'fsmap:cache:v1';
 const NOTE_DEBOUNCE_MS = 1000;
 
-/** base = updatedAt của bản trên kho lúc bắt đầu sửa; dùng để biết kho có bị thiết bị khác đổi trong lúc chờ không. */
-type QueueItem = { data: Record<string, unknown> | null; at: number; readyAt: number; base: string };
+/**
+ * base = updatedAt của bản trên kho lúc bắt đầu sửa; dùng để biết kho có bị thiết bị khác đổi trong lúc chờ không.
+ * patch, soft (chỉ meta): các trường đã sửa ở đây (null = xóa) và các trường chỉ đặt khi kho chưa có.
+ */
+type QueueItem = {
+  data: Record<string, unknown> | null; at: number; readyAt: number; base: string;
+  patch?: Record<string, unknown>; soft?: Record<string, unknown>;
+};
+type Fields = { patch?: Record<string, unknown>; soft?: Record<string, unknown> };
 type Queue = Record<string, QueueItem>;
 
 export type SyncStatus = 'connecting' | 'local' | 'synced' | 'pending' | 'offline' | 'error';
@@ -96,11 +103,19 @@ function persistQueue(q: Queue) {
   safeStorage.set(QUEUE_KEY, q);
 }
 
-function enqueue(docId: string, data: Record<string, unknown> | null, debounce = false) {
+function enqueue(docId: string, data: Record<string, unknown> | null, debounce = false, fields?: Fields) {
   const at = Date.now();
   useData.setState((s) => {
-    const base = s.queue[docId]?.base ?? updatedAtOf(s.remote[docId]);
-    const queue = { ...s.queue, [docId]: { data, at, readyAt: debounce ? at + NOTE_DEBOUNCE_MS : at, base } };
+    const prev = s.queue[docId];
+    const base = prev?.base ?? updatedAtOf(s.remote[docId]);
+    const item: QueueItem = { data, at, readyAt: debounce ? at + NOTE_DEBOUNCE_MS : at, base };
+    if (fields) {
+      // mục cũ trong hàng chờ không có patch (bản app trước): coi cả bản của nó là thay đổi
+      const legacy = prev && !prev.patch && !prev.soft ? prev.data : null;
+      item.patch = { ...legacy, ...prev?.patch, ...fields.patch };
+      item.soft = { ...prev?.soft, ...fields.soft };
+    }
+    const queue = { ...s.queue, [docId]: item };
     persistQueue(queue);
     return { queue, status: s.status === 'local' ? 'local' : s.status === 'error' ? 'error' : 'pending' };
   });
@@ -113,6 +128,19 @@ function scheduleFlush(delay: number) {
 }
 
 const updatedAtOf = (d: Record<string, unknown> | undefined) => (typeof d?.updatedAt === 'string' ? d.updatedAt : '');
+
+/** Meta trên kho đã bị thiết bị khác đổi trong lúc chờ: chỉ ghi lên đó các trường đã sửa ở đây. */
+function rebaseMeta(remoteDoc: Record<string, unknown>, item: QueueItem): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...remoteDoc };
+  for (const [k, v] of Object.entries(item.soft ?? {})) if (out[k] == null) out[k] = v;
+  // mục từ bản app trước không có patch: trường nó không có thì giữ của kho
+  const patch = item.patch ?? (item.soft ? {} : item.data!);
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === null) delete out[k];
+    else out[k] = v;
+  }
+  return { ...out, schemaVersion: SCHEMA_VERSION, updatedAt: nowIso() };
+}
 
 async function flush() {
   if (!backend || flushing) return;
@@ -136,6 +164,8 @@ async function flush() {
       } else if (changedElsewhere) {
         await backend.write('undo.' + docId.slice(2), { savedAt: nowIso(), reason: 'conflict', data: remoteDoc });
         await backend.write(docId, item.data!);
+      } else if (docId === 'meta' && item.data && remoteDoc && updatedAtOf(remoteDoc) !== item.base) {
+        await backend.write(docId, rebaseMeta(remoteDoc, item));
       } else if (item.data === null) {
         await backend.remove(docId);
       } else {
@@ -181,7 +211,7 @@ function migrateStage() {
   const meta = selectMeta(viewDocs(useData.getState()));
   if (meta.currentStage != null || !meta.startDate) return;
   const stage = currentStage(meta, today(), content.weeks.length);
-  if (stage != null) saveMeta({ currentStage: stage });
+  if (stage != null) saveMeta({ currentStage: stage }, true);
 }
 
 /** Chuyển dữ liệu của id đã đổi tên hoặc đã xóa, một lần sau mỗi snapshot. */
@@ -230,11 +260,14 @@ function saveTopic(topicId: string, p: TopicProgress, debounce = false) {
   enqueue('t.' + topicId, p as unknown as Record<string, unknown>, debounce);
 }
 
-function saveMeta(patch: Partial<Meta>) {
+/** soft: chỉ đặt các trường này nếu lúc gửi kho vẫn chưa có (dùng cho bước migrate). */
+function saveMeta(patch: Partial<Meta>, soft = false) {
   const meta = selectMeta(viewDocs(useData.getState()));
   const next = { ...meta, ...patch, schemaVersion: SCHEMA_VERSION, updatedAt: nowIso() };
   for (const k of Object.keys(next) as (keyof Meta)[]) if (next[k] === undefined) delete next[k];
-  enqueue('meta', next as unknown as Record<string, unknown>);
+  // JSON không giữ undefined, nên trường cần xóa được ghi là null
+  const fields = Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, v ?? null]));
+  enqueue('meta', next as unknown as Record<string, unknown>, false, soft ? { soft: fields } : { patch: fields });
 }
 
 export const actions = {
