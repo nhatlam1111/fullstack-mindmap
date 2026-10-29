@@ -1,6 +1,6 @@
 # Mindmap Fullstack
 
-Mindmap để học, tra cứu, ghi chú và theo dõi mức hiểu kiến thức fullstack trong 24 tuần.
+Mindmap để học, tra cứu, ghi chú và theo dõi mức hiểu kiến thức fullstack, học theo từng chặng.
 App chạy ở hai nơi:
 
 - **claude.ai:** https://claude.ai/artifact/4TNPENW2kRQLTwQ38LPK7Y (private, chỉ tài khoản của bạn mở được). Dữ liệu học lưu trong kho dữ liệu của artifact, theo tài khoản.
@@ -11,7 +11,7 @@ App chạy ở hai nơi:
 | Đường dẫn | Nội dung |
 | --- | --- |
 | `content/branches.yaml` | 8 nhánh và các nhóm |
-| `content/roadmap.yaml` | 24 tuần: mục tiêu, bài thực hành, mốc kiểm tra, chủ đề |
+| `content/roadmap.yaml` | Các chặng của lộ trình: mục tiêu, bài thực hành, mốc kiểm tra, chủ đề |
 | `content/topics/<nhánh>/<id>.md` | Một chủ đề một file: frontmatter + 7 mục của bài |
 | `content/ids.lock` | Mọi id từng có; build tự ghi thêm, không xóa dòng |
 | `lab/` | Thử nghiệm chạy thật (`docker-compose.yml`, `experiments/<id>/`) |

@@ -1,4 +1,4 @@
-// Dữ liệu dùng chung cho các lab tuần 3: bảng requests có số dòng tùy chọn (mặc định 1 triệu), sinh xác định (không ngẫu nhiên).
+// Dữ liệu dùng chung cho các lab chặng 3: bảng requests có số dòng tùy chọn (mặc định 1 triệu), sinh xác định (không ngẫu nhiên).
 // - requester_id: 5.000 người gửi, mỗi người 200 yêu cầu rải đều theo thời gian (1 + (g*7919) % 5000).
 // - department_id: suy ra từ requester_id (1 + (requester_id-1) % 20), nên hai cột tương quan hoàn toàn.
 // - status: 5% pending, 20% rejected, 75% approved; mỗi người gửi có đủ ba trạng thái (dùng g + g/5000 để trạng thái không phụ thuộc người gửi).

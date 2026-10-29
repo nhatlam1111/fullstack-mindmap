@@ -1,4 +1,4 @@
-// Database tự từ chối dữ liệu sai khi có constraint. Schema tối giản chỉ để thử nghiệm, không phải lời giải bài thực hành tuần 1.
+// Database tự từ chối dữ liệu sai khi có constraint. Schema tối giản chỉ để thử nghiệm, không phải lời giải bài thực hành ở chặng 1.
 import { header, session, step } from '../../lib/harness.mjs';
 
 await header('Constraint chặn dữ liệu sai');

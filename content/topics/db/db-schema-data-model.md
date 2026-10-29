@@ -72,6 +72,8 @@ changelog:
     note: "Phản biện: nêu quyền CREATE trên public từ PostgreSQL 15 và thêm bước lab với role thường, thêm ngoại lệ tên pg_, ghi rõ định nghĩa data modeling là của MongoDB và các nhận định về schema quan hệ là cách bài này nhìn, mô tả đúng điều lab quan sát được về tên đầy đủ."
   - date: 2026-10-15
     note: "Kiểm chứng: qua phản biện độc lập, đã xử lý mọi phát hiện; chuyển sang Đã kiểm chứng."
+  - date: 2026-10-29
+    note: "Bỏ chỗ nhắc bài thực hành cũ; nhận định, nguồn và ví dụ không đổi."
 ---
 
 ## Vấn đề cần giải quyết
@@ -130,7 +132,7 @@ Tài liệu PostgreSQL tự ghi chú khác biệt này: trong chuẩn SQL, ở h
 
 ## Câu hỏi tự kiểm tra
 
-- Lấy ví dụ từ bài thực hành quản lý yêu cầu: data model của nó là gì, và schema cụ thể gồm những gì?
+- Chọn một ứng dụng bạn đang làm: data model của nó là gì, và schema cụ thể gồm những gì?
 - Trên PostgreSQL 16, câu `select * from requests` dùng bảng nào? Điều gì quyết định, và khi nào câu lệnh báo `42P01` dù bảng tên đó có tồn tại?
 - Cùng chữ "schema", Oracle và PostgreSQL chỉ hai thứ khác nhau thế nào? Khi chuyển script tạo bảng không ghi schema từ Oracle sang PostgreSQL 16, câu `CREATE TABLE` có thể cho những kết quả nào, tùy role chạy nó?
 - "Flexible schema" của MongoDB 9.0 cho phép gì? Khi nào MongoDB khuyên bật schema validation, và khi đó insert sai cấu trúc bị xử lý thế nào theo mặc định?

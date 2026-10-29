@@ -22,7 +22,7 @@ services:
     volumes: ["oradata:/opt/oracle/oradata"]
     profiles: ["oracle"]
 
-  # Tuần 5 thêm redis và mongo.
+  # Chặng 5 thêm redis và mongo.
 
 volumes:
   pgdata:

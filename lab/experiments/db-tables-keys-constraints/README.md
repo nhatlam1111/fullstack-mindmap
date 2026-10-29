@@ -24,7 +24,7 @@ node experiments/db-tables-keys-constraints/run.mjs
 
 **Giới hạn của kết luận.**
 
-- Schema chỉ đủ cho thử nghiệm, không phải lời giải bài thực hành tuần 1.
+- Schema chỉ đủ cho thử nghiệm, không phải lời giải bài thực hành ở chặng 1.
 - Mã lỗi và thông báo là của PostgreSQL 16; Oracle dùng mã khác (ví dụ ORA-02290 cho check) và có xử lý NULL trong unique nhiều cột khác (xem bài).
 - Không đo chi phí hiệu năng của constraint hay của việc thiếu index ở cột foreign key.
 

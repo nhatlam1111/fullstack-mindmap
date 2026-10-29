@@ -44,6 +44,8 @@ changelog:
     note: "Phản biện: ghi rõ các giới hạn là của Claude Code theo tài liệu, chuyển ý giải sai bài toán vào luồng làm việc, liệt kê đủ bốn nhóm việc của GitHub, thêm lý do mở phiên mới và cặp ví dụ foo.py, sửa tiêu đề nguồn GitHub, ghi rõ dấu hiệu nào là kinh nghiệm của bài."
   - date: 2026-10-15
     note: "Kiểm chứng: qua phản biện độc lập, đã xử lý mọi phát hiện; chuyển sang Đã kiểm chứng."
+  - date: 2026-10-29
+    note: "Bỏ chỗ nhắc bài thực hành cũ; nhận định, nguồn và ví dụ không đổi."
 ---
 
 ## Vấn đề cần giải quyết
@@ -106,7 +108,7 @@ GitHub khuyên bắt đầu với việc đơn giản: sửa bug, đổi giao di
 
 ## Câu hỏi tự kiểm tra
 
-- Bài thực hành tuần 1 yêu cầu viết đặc tả ứng dụng quản lý yêu cầu nội bộ đủ rõ để giao cho agent. Đặc tả cần những phần nào, và phần nào giúp agent tự biết mình đã làm xong?
+- Bạn cần viết đặc tả cho một ứng dụng nhỏ, đủ rõ để giao cho agent. Đặc tả cần những phần nào, và phần nào giúp agent tự biết mình đã làm xong?
 - Khi nào nên bỏ qua bước lập kế hoạch và giao việc trực tiếp? Theo GitHub, những loại việc nào bạn nên cân nhắc tự làm thay vì giao cho agent?
 - Viết lại yêu cầu "add tests for foo.py" theo cách tài liệu Claude Code gợi ý. Bạn đã thêm những thông tin gì, và mỗi thông tin giúp agent điều gì?
 - Vì sao một spec tự đủ cho phép mở phiên mới chỉ để thực hiện, và điều đó giúp gì cho agent?
