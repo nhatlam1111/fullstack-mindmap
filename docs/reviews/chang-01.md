@@ -55,7 +55,7 @@ Tổng: 0 blocker, 0 major, 2 minor.
 - db-transaction-acid dòng 134, 141, 56 (minor): giữ nguyên: các câu này thuộc phần đã kiểm chứng từ 14–15/10, nằm ngoài phạm vi thay đổi lần này, và vẫn khớp lab. Sửa thì phải mở thêm một vòng phản biện cho phần cũ. Ghi lại để sửa ở lần rà soát bài này sau.
 - db-normalization dòng 111 (minor): giữ nguyên, cùng lý do.
 
-Kết luận vòng: sạch. Ba bài giữ `verified`; `verifiedAt` đổi sang 2026-10-29 vì thân bài có sửa và vòng gần nhất sạch.
+Kết luận vòng: sạch. Ba bài giữ `verified` và giữ `verifiedAt: 2026-10-15`: lần này chỉ các đoạn đã đổi được phản biện, phần còn lại của bài vẫn là lần kiểm chứng ngày 15/10, nên hạn rà soát của bài không được lùi ra.
 
 ## Vòng 1 — 29/10/2026 — nhóm A
 Bài: learn-six-questions, learn-using-mindmap, learn-practice-case, learn-lab
