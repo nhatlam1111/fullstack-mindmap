@@ -7,12 +7,36 @@ import { APP, blockNetwork, fakeClaude } from './helpers';
 
 test.beforeEach(async ({ page }) => { await blockNetwork(page); });
 
-test('chế độ cục bộ: chọn ngày bắt đầu, hiện tuần hiện tại', async ({ page }) => {
+test('chế độ cục bộ: chọn chặng bắt đầu, hiện chặng hiện tại', async ({ page }) => {
   await page.goto(APP);
   await expect(page.getByText('Chế độ cục bộ.')).toBeVisible();
   await page.getByRole('button', { name: 'Bắt đầu' }).click();
-  await expect(page.locator('.week-stamp')).toHaveText('Tuần 1/24');
+  await expect(page.locator('.week-stamp')).toHaveText('Chặng 1/30');
   await expect(page.getByRole('heading', { name: 'Database, schema và mô hình quan hệ' })).toBeVisible();
+});
+
+test('xong chặng thì sang chặng tiếp', async ({ page }) => {
+  await page.goto(APP);
+  await page.getByRole('button', { name: 'Bắt đầu' }).click();
+  await page.getByRole('button', { name: 'Xong, sang chặng 2' }).click();
+  await expect(page.locator('.week-stamp')).toHaveText('Chặng 2/30');
+  await expect(page.getByRole('heading', { name: 'Transaction, isolation, MVCC và locking' })).toBeVisible();
+});
+
+test('chặng cuối không có nút sang chặng tiếp', async ({ page }) => {
+  await fakeClaude(page, { meta: { schemaVersion: 1, currentStage: 30, updatedAt: '2026-10-29T00:00:00.000Z' } });
+  await page.goto(APP + '#today');
+  await expect(page.locator('.week-stamp')).toHaveText('Chặng 30/30');
+  await expect(page.getByRole('button', { name: /^Xong, sang chặng/ })).toHaveCount(0);
+});
+
+test('chọn chặng trên trang Lộ trình', async ({ page }) => {
+  await page.goto(APP);
+  await page.getByRole('button', { name: 'Bắt đầu' }).click();
+  await page.goto(APP + '#w18');
+  await page.locator('#week-18').getByRole('button', { name: 'Học chặng này' }).click();
+  await expect(page.locator('.week-stamp')).toHaveText('Chặng 18/30');
+  await expect(page.locator('#week-18').getByRole('button', { name: 'Học chặng này' })).toHaveCount(0);
 });
 
 test('cây chủ đề dùng được bằng bàn phím', async ({ page }) => {
@@ -60,7 +84,7 @@ test('tìm kiếm không dấu, kể cả chữ đ, mở đúng bài', async ({ 
   await page.goto(APP);
   await page.keyboard.press('Control+k');
   await page.getByRole('searchbox').fill('xu ly dong thoi');
-  await expect(page.getByRole('option').first()).toContainText('Mô hình xử lý đồng thời');
+  await expect(page.getByRole('listbox', { name: 'Kết quả' }).getByRole('option').first()).toContainText('Mô hình xử lý đồng thời');
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/#be-concurrency-models$/);
 });

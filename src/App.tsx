@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useRoute, type Route } from './router';
-import { topics } from './content';
+import { content, topics } from './content';
 import { useData, startSync } from './store/data';
 import { useDueList, useWeek } from './store/hooks';
 import { Icon } from './components/Icon';
@@ -74,7 +74,7 @@ export function App() {
       <header className="topbar">
         <a className="brand" href="#today">
           <span className="brand-name">Mindmap Fullstack</span>
-          {week != null && week >= 1 && week <= 24 && <span className="week-stamp tabular">Tuần {week}/24</span>}
+          {week != null && <span className="week-stamp tabular">Chặng {week}/{content.weeks.length}</span>}
         </a>
         <span className="topbar-spacer" />
         <button className="search-trigger" type="button" onClick={() => setSearchOpen(true)} aria-label="Tìm kiếm (Ctrl K)">

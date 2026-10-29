@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { content, topics, CONTENT_LABEL } from '../content';
 import { useData, actions } from '../store/data';
-import { useMeta, useProgress, useOrphans, useUndo } from '../store/hooks';
+import { useMeta, useProgress, useOrphans, useUndo, useWeek } from '../store/hooks';
 import { getDownloads } from '../store/backend';
 import { migrateBackup, SCHEMA_VERSION, type Backup, type MergeMode } from '../store/model';
 import { today, formatDay } from '../lib/dates';
@@ -22,6 +22,7 @@ export function DataView() {
   const progress = useProgress();
   const orphans = useOrphans();
   const undo = useUndo();
+  const stage = useWeek();
   const notes = Object.values(progress).filter((p) => p.note.trim()).length;
   const pendingCount = Object.keys(queue).length;
   const counts = Object.values(topics).reduce<Record<string, number>>((a, t) => { a[t.contentStatus] = (a[t.contentStatus] ?? 0) + 1; return a; }, {});
@@ -45,7 +46,7 @@ export function DataView() {
         </dl>
       </section>
 
-      <StartDate current={meta.startDate} />
+      <StageCard key={stage ?? 0} current={stage} />
       <ExportCard />
       <ImportCard />
 
@@ -81,16 +82,17 @@ export function DataView() {
   );
 }
 
-function StartDate({ current }: { current?: string }) {
-  const [d, setD] = useState(current ?? today());
+function StageCard({ current }: { current: number | null }) {
+  const [s, setS] = useState(current ?? 1);
   return (
     <section className="card" aria-labelledby="sd-h">
-      <h2 id="sd-h">Ngày bắt đầu lộ trình</h2>
+      <h2 id="sd-h">Chặng hiện tại</h2>
       <div className="btn-row">
-        <label className="visually-hidden" htmlFor="sd-input">Ngày bắt đầu tuần 1</label>
-        <input id="sd-input" className="input" type="date" value={d} onChange={(e) => setD(e.target.value)} />
-        <button className="btn" type="button" disabled={!d || d === current} onClick={() => actions.setStartDate(d)}>Lưu</button>
-        {current && <span className="small muted">Đang dùng: {formatDay(current)}</span>}
+        <label className="visually-hidden" htmlFor="sd-input">Chặng hiện tại</label>
+        <select id="sd-input" className="input" value={s} onChange={(e) => setS(Number(e.target.value))}>
+          {content.weeks.map((w) => <option key={w.week} value={w.week}>{w.week}. {w.title}</option>)}
+        </select>
+        <button className="btn" type="button" disabled={s === current} onClick={() => actions.setStage(s)}>Lưu</button>
       </div>
     </section>
   );

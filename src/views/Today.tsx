@@ -3,7 +3,7 @@ import { content, topics, topicsOfBranch, hasArticle } from '../content';
 import { useMeta, useProgress, useWeek, useDueList } from '../store/hooks';
 import { useData, actions } from '../store/data';
 import { progressOf } from '../store/model';
-import { today, weekRange, formatDay, daysBetween } from '../lib/dates';
+import { today, daysBetween } from '../lib/dates';
 import { TopicList } from '../components/TopicList';
 
 export function Today() {
@@ -20,34 +20,34 @@ export function Today() {
   const hasData = Object.keys(progress).length > 0;
   const backupAge = meta.lastBackupAt ? daysBetween(meta.lastBackupAt, today()) : null;
   const needBackup = hasData && (backupAge === null || backupAge > 30);
-  const wk = week && week >= 1 && week <= 24 ? content.weeks.find((w) => w.week === week) : undefined;
+  const total = content.weeks.length;
+  const wk = week != null ? content.weeks.find((w) => w.week === week) : undefined;
 
   return (
     <div className="page">
       <div>
         <h1 className="page-title">Hôm nay</h1>
-        {wk && meta.startDate && (
-          <p className="lede tabular">Tuần {wk.week}/24 · {formatDay(weekRange(meta.startDate, wk.week).from)} – {formatDay(weekRange(meta.startDate, wk.week).to)}</p>
-        )}
+        {wk && <p className="lede tabular">Chặng {wk.week}/{total}</p>}
       </div>
 
       {status === 'local' && <LocalNotice reason={localReason} />}
 
-      {!meta.startDate && <StartDateCard />}
-      {week === 0 && meta.startDate && (
-        <div className="notice info"><strong>Sắp bắt đầu.</strong><span>Tuần 1 bắt đầu ngày {formatDay(meta.startDate)}.</span></div>
-      )}
-      {week === 25 && <div className="notice info"><strong>Đã qua 24 tuần.</strong><span>Xem lại bài tổng hợp cuối kỳ và rà soát toàn bộ mindmap.</span></div>}
+      {week == null && <StartStageCard />}
 
       {wk && (
         <section className="card" aria-labelledby="this-week">
-          <div className="eyebrow">Tuần này</div>
+          <div className="eyebrow">Chặng này</div>
           <h2 id="this-week">{wk.title}</h2>
           <p className="muted">{wk.goal}</p>
           <p className="small"><strong>Thực hành:</strong> {wk.practice}</p>
           <p className="small"><strong>Mốc kiểm tra:</strong> {wk.checkpoint}</p>
           <TopicList ids={wk.topics} />
-          <a className="btn" href={`#w${wk.week}`}>Mở trong lộ trình</a>
+          <div className="btn-row">
+            <a className="btn" href={`#w${wk.week}`}>Mở trong lộ trình</a>
+            {wk.week < total && (
+              <button className="btn primary" type="button" onClick={() => actions.setStage(wk.week + 1)}>Xong, sang chặng {wk.week + 1}</button>
+            )}
+          </div>
         </section>
       )}
 
@@ -70,7 +70,7 @@ export function Today() {
       <section className="card" aria-labelledby="prog-h">
         <div className="eyebrow">Tiến độ theo nhánh</div>
         <h2 id="prog-h" className="visually-hidden">Tiến độ theo nhánh</h2>
-        <p className="small muted">Số chủ đề Đã hiểu trên số chủ đề đã có bài hoặc đã tới tuần học.</p>
+        <p className="small muted">Số chủ đề Đã hiểu trên số chủ đề đã có bài hoặc thuộc các chặng bạn đã tới.</p>
         <BranchProgress week={week} />
       </section>
 
@@ -91,17 +91,19 @@ export function LocalNotice({ reason }: { reason: string | null }) {
   return <div className="notice"><strong>Chế độ cục bộ.</strong><span>{text}</span></div>;
 }
 
-function StartDateCard() {
-  const [d, setD] = useState(today());
+function StartStageCard() {
+  const [s, setS] = useState(1);
   return (
     <section className="card" aria-labelledby="start-h">
       <div className="eyebrow">Bắt đầu lộ trình</div>
-      <h2 id="start-h">Chọn ngày bắt đầu tuần 1</h2>
-      <p className="small muted">Ngày này dùng để biết bạn đang ở tuần nào trong 24 tuần. Đổi lại được ở mục Dữ liệu học.</p>
+      <h2 id="start-h">Chọn chặng bắt đầu</h2>
+      <p className="small muted">Chặng hiện tại cho biết bạn đang học tới đâu. Đổi lại được ở trang Lộ trình hoặc mục Dữ liệu học.</p>
       <div className="btn-row">
-        <label className="visually-hidden" htmlFor="start-date">Ngày bắt đầu</label>
-        <input id="start-date" className="input" type="date" value={d} onChange={(e) => setD(e.target.value)} />
-        <button className="btn primary" type="button" disabled={!d} onClick={() => actions.setStartDate(d)}>Bắt đầu</button>
+        <label className="visually-hidden" htmlFor="start-stage">Chặng bắt đầu</label>
+        <select id="start-stage" className="input" value={s} onChange={(e) => setS(Number(e.target.value))}>
+          {content.weeks.map((w) => <option key={w.week} value={w.week}>{w.week}. {w.title}</option>)}
+        </select>
+        <button className="btn primary" type="button" onClick={() => actions.setStage(s)}>Bắt đầu</button>
       </div>
     </section>
   );
@@ -121,7 +123,7 @@ function BranchProgress({ week }: { week: number | null }) {
             <div className="row" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 120px 64px', gap: 12 }}>
               <span className="title">{b.title}</span>
               <span className="progress" aria-hidden="true"><span style={{ width: `${pct}%` }} /></span>
-              <span className="meta tabular" aria-label={total ? `${understood} trên ${total} chủ đề đã hiểu` : 'Chưa tới tuần học'}>{total ? `${understood}/${total}` : '—'}</span>
+              <span className="meta tabular" aria-label={total ? `${understood} trên ${total} chủ đề đã hiểu` : 'Chưa tới chặng học'}>{total ? `${understood}/${total}` : '—'}</span>
             </div>
           </li>
         );

@@ -27,11 +27,6 @@ export function currentWeek(startDate: string | undefined, todayIso: string): nu
   return Math.min(25, Math.floor(d / 7) + 1);
 }
 
-export function weekRange(startDate: string, week: number) {
-  const from = addDays(startDate, (week - 1) * 7);
-  return { from, to: addDays(from, 6) };
-}
-
 export function formatDay(iso: string): string {
   const [y, m, d] = iso.split('-');
   return `${d}/${m}/${y}`;

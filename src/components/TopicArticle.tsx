@@ -53,7 +53,7 @@ function Header({ t }: { t: Topic }) {
         <LearnChip status={displayStatus(progress[t.id])} />
         <ContentChip topic={t} />
         <span className="chip" data-tone="outline">{VOLATILITY_LABEL[t.volatility]}</span>
-        {t.weeks.map((w) => <a key={w} className="chip" data-tone="outline" href={`#w${w}`}>Tuần {w}</a>)}
+        {t.weeks.map((w) => <a key={w} className="chip" data-tone="outline" href={`#w${w}`}>Chặng {w}</a>)}
         {t.verifiedAt && <span className="chip" data-tone="outline">{t.verifiedBy === 'claude' ? 'Claude kiểm chứng' : 'Bạn kiểm chứng'} {formatDay(t.verifiedAt)}</span>}
       </div>
       {stale && (
@@ -76,7 +76,7 @@ function Skeleton({ t }: { t: Topic }) {
   return (
     <div className="prose">
       <div className="empty">
-        Bài này chưa được viết. {t.weeks.length ? <>Theo lộ trình, nó sẽ được biên soạn vào <a href={`#w${t.weeks[0]}`}>tuần {t.weeks[0]}</a>.</> : null}
+        Bài này chưa được viết. {t.weeks.length ? <>Theo lộ trình, nó sẽ được biên soạn ở <a href={`#w${t.weeks[0]}`}>chặng {t.weeks[0]}</a>.</> : null}
       </div>
       <Relations t={t} />
     </div>
