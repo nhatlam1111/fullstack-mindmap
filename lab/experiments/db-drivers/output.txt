@@ -1,0 +1,72 @@
+# Driver và client trên PostgreSQL
+Máy chủ: PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+Isolation mặc định: read committed
+Client: Node.js v25.2.1, driver pg 8.16.3
+Thời điểm chạy: 2026-11-02T03:15:30.167Z
+
+## 1. Mỗi kết nối là một tiến trình backend riêng
+[A]    47ms  select pg_backend_pid() as pid
+   [A] →
+   pid
+   ---
+   110
+   (1 dòng)
+[B]    49ms  select pg_backend_pid() as pid
+   [B] →
+   pid
+   ---
+   111
+   (1 dòng)
+[A]    50ms  select application_name, backend_type, state from pg_stat_activity where application_name like 'lab-%' order by application_name
+   [A] →
+   application_name | backend_type   | state 
+   -----------------+----------------+-------
+   lab-A            | client backend | active
+   lab-B            | client backend | idle  
+   (2 dòng)
+-- Driver pg giữ process ID và secret key nhận ở lúc khởi động (BackendKeyData): processID = 110, có secretKey: true
+
+## 2. Không có tham số: giao thức simple nhận nhiều câu lệnh trong một chuỗi
+[A] select 1 as a; select 2 as b → 2 bộ kết quả: [[{"a":1}],[{"b":2}]]
+
+## 3. Có tham số: giao thức extended chỉ nhận một câu lệnh
+[A]    52ms  select $1::int as a; select 2 as b   -- tham số: [1]
+[A]    54ms  LỖI 42601: cannot insert multiple commands into a prepared statement
+[A]    54ms  select $1::int as a   -- tham số: [1]
+   [A] →
+   a
+   -
+   1
+   (1 dòng)
+
+## 4. Kiểu dữ liệu sau khi qua driver
+[A]    55ms  select 1::int4 as so_int4, 9007199254740993::int8 as so_int8, 1.10::numeric(10,2) as so_numeric, 0.1::float8 as so_float8, true as gia_tri_bool, timestamptz '2026-01-02 03:04:05.123456+07' as thoi_diem, jsonb '{"a":1}' as du_lieu_json, array[1,2]::int[] as mang, gen_random_uuid() is not null as co_uuid
+   [A] →
+   so_int4 | so_int8          | so_numeric | so_float8 | gia_tri_bool | thoi_diem                | du_lieu_json    | mang | co_uuid
+   --------+------------------+------------+-----------+--------------+--------------------------+-----------------+------+--------
+   1       | 9007199254740993 | 1.10       | 0.1       | true         | 2026-01-01T20:04:05.123Z | [object Object] | 1,2  | true   
+   (1 dòng)
+   so_int4: typeof = number, giá trị = 1
+   so_int8: typeof = string, giá trị = "9007199254740993"
+   so_numeric: typeof = string, giá trị = "1.10"
+   so_float8: typeof = number, giá trị = 0.1
+   gia_tri_bool: typeof = boolean, giá trị = true
+   thoi_diem: typeof = Date, giá trị = "2026-01-01T20:04:05.123Z"
+   du_lieu_json: typeof = object, giá trị = {"a":1}
+   mang: typeof = Array, giá trị = [1,2]
+   co_uuid: typeof = boolean, giá trị = true
+
+## 5. Đổi int8 sang Number làm mất chính xác; numeric giữ được chữ số 0 ở cuối khi còn là chuỗi
+   chuỗi từ driver: 9007199254740993
+   Number(chuỗi): 9007199254740992
+   BigInt(chuỗi): 9007199254740993
+   numeric dạng chuỗi: 1.10; Number(chuỗi): 1.1
+
+## 6. timestamptz có micro giây, Date của JavaScript chỉ giữ tới mili giây
+[A]    57ms  select timestamptz '2026-01-02 03:04:05.123456+07'::text as chuoi_goc
+   [A] →
+   chuoi_goc                    
+   -----------------------------
+   2026-01-01 20:04:05.123456+00
+   (1 dòng)
+   Date sau khi qua driver: 2026-01-01T20:04:05.123Z
