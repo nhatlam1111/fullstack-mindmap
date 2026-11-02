@@ -2,6 +2,7 @@
 
 | Ngày | Thay đổi chính | Chủ đề (khung / nháp / đã kiểm chứng) |
 | --- | --- | --- |
+| 02/11/2026 | Chặng 4: kiểm chứng 6 bài Driver và client, ORM, Timeout và hủy truy vấn, Context cho agent trong repo, Review code do AI sinh, Test làm lưới an toàn qua 3 vòng phản biện độc lập (sửa 3 blocker, 27 major); thêm 3 lab db-drivers, db-orm, db-timeouts; xử lý nhóm tồn từ chặng 3 | 146 / 0 / 30 |
 | 02/11/2026 | Chặng 3: kiểm chứng 5 bài Index, Query plan, B-tree, LSM-tree, Mô hình truy vấn qua 2 vòng phản biện độc lập (sửa 1 blocker về Bloom filter của RocksDB, 4 major); bỏ kịch bản màn hình tự nghĩ, chạy lại lab db-access-patterns trong Docker, số trang không đổi; xử lý nhóm tồn từ chặng 1; gợi ý chạy lại trong 17 README lab nhắc đặt PGPORT | 152 / 0 / 24 |
 | 29/10/2026 | Chặng 1: kiểm chứng 4 bài cách học (Sáu câu hỏi, Cách dùng mindmap, Case hệ thống nghiên cứu thị trường game, Lab thử nghiệm) qua 3 vòng phản biện độc lập; sửa 4 góp ý câu chữ ở 3 bài Database đã kiểm chứng; checklist và quy trình kiểm chứng ở `docs/kiem-chung.md`; lab PostgreSQL chuyển sang 127.0.0.1:5433 | 152 / 5 / 19 |
 | 29/10/2026 | Sửa sau review: meta gộp theo trường khi kho bị thiết bị khác đổi (hết giới hạn ghi đè chặng của bản trước), meta giữ trường lạ, chưa tải xong dữ liệu thì không cho chọn chặng, focus và cuộn khi chọn chặng; sửa câu chữ đoạn nhắc lab ở 3 bài đã kiểm chứng (qua phản biện độc lập, không có blocker hay major) | 156 / 5 / 15 |
