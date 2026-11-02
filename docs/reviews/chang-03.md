@@ -95,3 +95,70 @@ Tổng: 0 blocker, 0 major, 5 minor.
 Cả 5 minor giữ nguyên ở chặng này và chuyển sang nhóm tồn của chặng 4 (xem "Việc tồn cho chặng sau" cuối file): sửa bây giờ thì cần thêm một vòng cho phần chữ mới, trong khi không minor nào làm sai nhận định chính của bài.
 
 Kết luận vòng: sạch. `db-transaction-acid` và `db-normalization` giữ `verifiedAt: 2026-10-15`; `learn-practice-case` và `learn-lab` giữ `verifiedAt: 2026-10-29`, vì lần này chỉ phần đã đổi được phản biện.
+
+## Vòng 1 — 29/10/2026 — nhóm A
+Agent bị dừng ngày 29/10 vì giới hạn sử dụng và chạy tiếp, hoàn thành ngày 02/11/2026.
+
+Bài: db-index-basics, db-query-plan, db-btree, db-lsm-tree, db-access-patterns
+
+Nguồn đã mở: tất cả đều mở được, không có nguồn nào không mở được.
+- **db-index-basics:** pg-indexes-intro, pg-index-types, pg-indexes-examine, pg-createindex, pg-monitoring, ora-indexes: mở được.
+- **db-query-plan:** pg-using-explain, pg-planner-stats, pg-indexes-ordering, ora-explain: mở được.
+- **db-btree:** ora-indexes, pg-btree-impl, pg-nbtree-readme, pg-pageinspect, pg-index-types, pg-indexes-opclass: mở được.
+- **db-lsm-tree:** oneil-lsm, rocksdb-overview, rocksdb-leveled, rocksdb-compaction, rocksdb-bloom, myrocks-pvldb: mở được.
+- **db-access-patterns:** ddb-nosql-design, ddb-relational-example, mongodb-data-modeling, pg-indexes-multicolumn, pg-indexes-ordering, pg-index-only-scans, pg-indexes-partial, pg-createindex, pg-prepare: mở được.
+
+| Bài | Vị trí (dòng) | Mức | Điểm checklist | Phát hiện | Đề xuất |
+|---|---|---|---|---|---|
+| db-lsm-tree | 96; `supports` của rocksdb-bloom (45) | blocker | B5, B6, C11 | "RocksDB gắn Bloom filter vào mỗi file SST mới" bỏ mất điều kiện của wiki: "when the filter policy is set". "Mặc định tốn khoảng 10 bit mỗi khóa" sai: wiki chỉ dùng 10 bit trong ví dụ cấu hình `NewBloomFilterPolicy(10, false)`. Ở RocksDB v9.8.4, `filter_policy` trong `table.h` mặc định là `nullptr`, tức không có Bloom filter nếu không cấu hình. `run.py` của lab cũng không đặt filter policy. | Sửa thành: khi đặt filter policy, mỗi file SST mới có Bloom filter; ví dụ của wiki dùng khoảng 10 bit mỗi khóa, và đây không phải mặc định. Sửa cả `supports`. |
+| db-lsm-tree | 96, 135 | major | B6, E17 | Câu hỏi "vì sao nó không giúp được quét theo khoảng?" khái quát cho mọi Bloom filter, trong khi dòng 96 chỉ nói Bloom filter theo nguyên khóa. Chính myrocks-pvldb và rocksdb-bloom cho thấy prefix Bloom filter giúp quét theo khoảng có điều kiện bằng trên tiền tố. Bài không nhắc prefix Bloom filter. | Thêm một câu về prefix Bloom filter (dẫn myrocks-pvldb). Đổi câu hỏi thành Bloom filter theo nguyên khóa. |
+| db-access-patterns | 5 (`summary`), 99, 105, 166 | major | A3, B6, E17, E18 | Dòng 99 khái quát thành mọi "thiết kế dữ liệu và index", rồi dẫn DynamoDB. Nguồn đó lại nói điều ngược lại với RDBMS: có thể tạo mô hình chuẩn hóa trước mà chưa nghĩ tới access pattern, rồi mở rộng sau. Câu trong `summary` cũng tuyệt đối như vậy, lệch với db-normalization dòng 159 ("bắt đầu từ thiết kế đã normalize"). Bài bỏ vế RDBMS này nên câu hỏi dòng 166 về "điểm xuất phát" không trả lời đủ được từ bài. | Giới hạn câu dòng 99 và `summary` vào NoSQL và việc chọn index. Thêm vế RDBMS của nguồn vào dòng 105. |
+| db-access-patterns | Lab: README 3 và 62, run.mjs 1 và 11, output.txt 25; bài 128 | major | C10 | Kịch bản màn hình "Yêu cầu của tôi" đã bị commit 973dab2 gỡ khỏi bài vì là kịch bản tự nghĩ, nhưng còn nguyên trong lab. Dòng 128 của bài còn cụm "danh sách chờ duyệt". Không xếp blocker vì số đo là thật, chỉ phần nhãn là tự nghĩ. | Viết lại thành mô tả truy vấn. Vì `output.txt` phải nguyên văn, sửa note trong `run.mjs` rồi chạy lại lab. Đổi dòng 128 thành "truy vấn yêu cầu `pending`". |
+| db-btree | 86 | major | C11, E15 | "Mỗi tầng phía trên có ít trang hơn tầng dưới hàng trăm lần" không khớp bảng ngay trên: tầng 0 so với tầng 1 là 2.733/10 ≈ 273 lần, nhưng tầng 1 so với tầng 2 chỉ 10 lần. Trang gốc có 10 mục. | Viết: mỗi trang trong chứa được hàng trăm mục, tầng 1 trung bình 274 mục; trang gốc mới dùng 10 mục. |
+| db-index-basics | 108 | minor | E15 | Bài không nói `idx_scan` đứng yên chưa đủ để xóa index. Index của `PRIMARY KEY` và `UNIQUE` còn giữ ràng buộc (db-tables-keys-constraints dòng 16–17). | Thêm một vế loại trừ index giữ ràng buộc. |
+| db-index-basics, db-btree | 96; 105 | minor | E19 | Bài nhắc HOT nhưng không giải thích nó là gì. Hai bài và các bài đối chiếu đều không có phần này. | Giải thích một câu ở db-index-basics. |
+| db-index-basics, db-query-plan | 120; 87 | minor | B6, D13 | "Số trang ổn định hơn thời gian" không có nguồn. Lab không đo được điều này vì mỗi truy vấn chỉ chạy một lần. README của db-index-basics cũng ghi tương tự. | Ghi là nhận định của bài, hoặc bỏ. |
+| db-query-plan | 85 | minor | B4 | Nhận định `EXPLAIN` không chạy câu lệnh thiếu `[^id]`. | Gắn `[^pg-using-explain]`. |
+| db-query-plan | 96 | minor | B6 | pg-using-explain không nói về node song song; phần `loops` nói về subplan chạy nhiều lần. Việc áp dụng cho node song song là kết quả lab. | Ghi rõ: tổng 200.000 ở `Gather` là số trong lab bước 3. |
+| db-query-plan | 71, 104, 113 | minor | E15 | Câu hỏi dòng 113 hỏi lệnh sửa "cho planner biết điều gì", nhưng bài không nói tới phụ thuộc hàm, tuy pg-planner-stats có. | Thêm một câu: giá trị cột phụ thuộc không thu hẹp thêm kết quả. |
+| db-query-plan | Liên quan db-joins 97 | minor | E18 | db-joins dẫn sang bài này cho ý "index trên cột dùng để join là một phần của thiết kế", nhưng bài không bàn về việc đó. | Thêm một câu, hoặc đổi liên kết ở db-joins sang bài Index. |
+| db-btree | 70 | minor | B4, E18 | "Vẫn nhanh khi bảng liên tục được chèn thêm" không có nguồn, và căng với db-lsm-tree dòng 74 (chèn liên tục tốc độ cao thì tốn kém). | Viết rõ "vẫn tìm nhanh", hoặc bỏ vế này. |
+| db-btree | 90, 120–122 | minor | E15 | Bài dùng 6 trang và 4 trang để minh họa đi dọc trang lá, nhưng hai số này gồm cả trang bảng (`Heap Fetches` 100 và 5). Bài cũng không giải thích vì sao 100 lần vào bảng chỉ tốn vài trang. | Nói rõ số trang gồm cả trang bảng. |
+| db-btree | 94 | minor | E19 | `downlink` không được giải thích ở lần đầu dùng. | Thêm "(con trỏ từ trang cha xuống trang con)". |
+| db-btree | 96 | minor | B6 | README nói chung thì lượt quét không phải giữ khóa khi đi xuống cây, nhưng PostgreSQL vẫn khóa đọc từng trang lúc đang xem trang đó. Câu của bài dễ hiểu thành không có khóa nào. | Thêm "trừ khóa ngắn trên trang đang đọc". |
+| db-btree | 98 | minor | B6, E15 | Bài bỏ điều kiện gộp chỉ chạy khi xóa tuple không giải phóng đủ chỗ. Số đo ngay sau đó lại từ `CREATE INDEX` trên bảng đã có dữ liệu, không phải đường chèn lười. | Thêm điều kiện và nói rõ cách lab dựng index. |
+| db-btree | 104, 111, 124 | minor | C11, E15 | Bài không nói rõ `C.UTF-8` không phải locale C chuẩn, nên người học kiểm tra `datcollate` dễ kết luận sai. "(libc)" cũng không có trong output, vì lab không truy vấn provider. | Nêu rõ điểm này. Bỏ "(libc)" hoặc thêm truy vấn `datlocprovider` vào lab. |
+| db-btree | 110, 112 | minor | C10, B6 | Dòng `Filter: (title ~~ '%abc'::text)` chưa từng chạy trong lab. Vế `order by title` ở dòng 112 không có trong pg-indexes-opclass. Không xếp blocker vì đây là mô tả dấu hiệu, không trình bày như ví dụ. | Thêm truy vấn đó vào lab hoặc mô tả bằng lời. Ghi vế `order by` là suy luận. |
+| db-lsm-tree | 82, 84 | minor | E15 | Tiêu đề "Ghi vào bộ nhớ trước" và mô tả logfile không cho biết WAL giữ dữ liệu của memtable khi hỏng máy. | Thêm một câu về vai trò của WAL, có nguồn. |
+| db-lsm-tree | 80 | minor | B7 | Câu này đặt mọi mô tả dưới RocksDB 9.8.4, trong khi wiki không gắn phiên bản; chỉ frontmatter ghi điều đó. | Ghi trong bài: wiki không gắn phiên bản, số đo lab là 9.8.4. |
+| db-lsm-tree | 90 | minor | E15 | "Level thấp hơn" dịch sát "lower level", nên dễ đọc thành số nhỏ hơn, ngược với dòng 88. | Viết "level sâu hơn (số lớn hơn)". |
+| db-lsm-tree | 94, 98, 104 | minor | E19 | `sorted run`, `read amplification`, `write amplification`, `seek` không được giải thích ở lần đầu dùng. | Thêm giải thích ngắn. |
+| db-lsm-tree | 113 | minor | B6 | Bài báo nói về LSM-tree database như RocksDB, không riêng MyRocks. | Sửa cách nói. |
+| db-lsm-tree | Lab: `run.py` | minor | D12 | Chuỗi `rocksdict 0.3.25` trong output được viết cứng, không đọc từ gói. `rocksdb_version` thì đọc thật từ file OPTIONS. | Lấy bằng `importlib.metadata.version`. |
+| db-access-patterns | 105 | minor | B7 | Câu về MongoDB thiếu phiên bản trong bài; db-normalization ghi "MongoDB 9.0". | Thêm "9.0". |
+| db-access-patterns | 139 | minor | B6 | Dấu hiệu "sau khi đưa vào dùng mới phát hiện phải quét cả bảng" là suy luận, không có trong ddb-nosql-design dù gắn `[^id]`. | Chuyển `[^id]` về câu nguồn thật sự nói. |
+
+Tổng: 1 blocker, 4 major, 22 minor.
+
+Ghi chú:
+- **Validate:** `npm run validate` ra `176 chủ đề (skeleton: 152, verified: 19, draft: 5) · 0 lỗi · 0 cảnh báo`, không có lỗi hay cảnh báo liên quan tới 5 bài.
+- **Phiên bản đã xét:** phản biện trên HEAD `3dacb3f`. Commit này không đổi 5 bài; với lab của chúng, nó chỉ sửa dòng gợi ý biến môi trường trong 4 README (không có db-lsm-tree).
+- **Số liệu:** mọi con số còn lại trong 5 bài khớp `output.txt` hoặc nguồn. Không có nghi ngờ nào cần chạy lại lab.
+- **Mức đọc nguồn:**
+  - oneil-lsm: đọc tóm tắt, phần đầu bài và tra từ khóa.
+  - myrocks-pvldb: đọc ngữ cảnh quanh các đoạn được trích.
+  - pg-monitoring: chưa đọc 5.889 ký tự cuối.
+  - ora-explain: chưa đọc 36.886 ký tự cuối.
+  - Các trang còn lại đọc qua trích xuất của WebFetch; riêng hai trang DynamoDB có toàn văn.
+  - Phần chưa đọc không chứa câu nào bài trích. Phát hiện blocker đã đối chiếu thêm với bản thô của wiki và `table.h` ở tag `v9.8.4`.
+
+### Xử lý
+
+Blocker và 4 major đã sửa theo đề xuất. Trong 22 minor, 19 đã sửa theo đề xuất, với các ghi chú sau.
+
+- db-access-patterns, lab (major): đổi nhãn trong `run.mjs` và README rồi chạy lại lab trong container `postgres:16` trên máy Lam (ngày 02/11/2026). Số trang và kế hoạch giống hệt lần chạy 16/10, nên không số nào trong bài đổi. README ghi môi trường mới và nói rõ lần chạy cũ.
+- db-query-plan dòng 87 và db-index-basics dòng 120 (minor): đã sửa trong bài. README của lab db-index-basics vẫn còn câu tương tự: giữ nguyên, chuyển sang nhóm tồn.
+- db-query-plan, liên kết từ db-joins dòng 97 (minor): giữ nguyên ở chặng này vì phải sửa bài đã kiểm chứng; chuyển sang nhóm tồn (đổi liên kết ở db-joins sang bài Index).
+- db-lsm-tree, `run.py` (minor): giữ nguyên: `requirements.txt` đã cố định `rocksdict==0.3.25`, nên chuỗi in ra đúng với lần chạy; sửa script thì phải chạy lại lab mà không đổi kết luận nào. Chuyển sang nhóm tồn.
+
+Kết luận vòng: cần vòng sau.
