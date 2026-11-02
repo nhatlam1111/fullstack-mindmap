@@ -329,3 +329,156 @@ Tổng: 0 blocker, 2 major, 8 minor.
 - `aidev-tests-as-guardrails` dòng 94, 128: biến `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`.
 
 Kết luận vòng: cần vòng sau.
+
+## Vòng 3 — 02/11/2026 — nhóm A
+Bài: db-drivers, db-orm, db-timeouts
+
+Nguồn đã mở:
+- db-drivers:
+  - oracledb-modes: mở được.
+  - Mở thêm để đối chiếu: Release Notes của node-oracledb, mở được. Mục đầu là "node-oracledb v26.0.0 (8 Oct 2026)", không đánh dấu unreleased. `npm view oracledb` cho `latest` là 26.0.0.
+- db-orm:
+  - typeorm-repo: mở được.
+- db-timeouts:
+  - pg-set: mở được.
+  - np-pool: mở được.
+  - np-client: mở được.
+- Không mở lại, vì câu dẫn không đổi so với vòng 2: pg-protocol-overview, pg-protocol-flow, np-types, np-pg-types, np-queries, pg-query-source, mdn-max-safe, typeorm-find, typeorm-patterns, pg-client-config, pg17-client-config, pg-signal, aws-timeouts.
+- Giới hạn: WebFetch trả nội dung qua mô hình trích xuất, nên tôi chưa đọc văn bản thô toàn trang. Release Notes chỉ đọc 100.000 trên 166.547 ký tự đầu. Ý về native network encryption được xác nhận trực tiếp ở Appendix A: bảng 32.1 ghi Thin là "No", mục 32.2.1.8 ghi "does not support".
+
+| Bài | Vị trí (dòng) | Mức | Điểm checklist | Phát hiện | Đề xuất |
+|---|---|---|---|---|---|
+| db-timeouts | 109 | minor | B.6 | "sau `commit` giữ tới hết session" bỏ điều kiện của nguồn: "unless overridden by another `SET`". `supports` của pg-set có giữ điều kiện này, và lab tự dùng `reset` ở cuối bước 9. | Thêm "trừ khi có `set` khác ghi đè" khi xử lý nhóm tồn. |
+| db-timeouts | 109, 135, 137 | minor | E.15 | Câu mới nêu `set` thường giữ tới hết session nhưng không nói hệ quả với pool, trong khi đây là lý do chính để chọn `set local`. Dòng 135 còn viết "đặt riêng cho phiên đó". Phép thử của tôi ngoài lab (`pool.max = 1`, `pg-pool` 3.14.0): sau `set` thường rồi `commit` và `release`, lần mượn lại cùng backend trả `300ms`; với `set local` thì trả `0`. | Ở nhóm tồn, thêm bước vào lab rồi thêm một câu nói giá trị đi theo kết nối sang lần mượn sau. Bài chưa được trích số đo này vì nó chưa nằm trong `lab/experiments/`. |
+| db-timeouts | 56, 105 | minor | B.7 | Major về `pg-pool` đã xử lý đủ ở thân bài (dòng 148, 153) và README, nhưng còn sót hai chỗ. `version` của np-pool vẫn ghi "lab dùng pg 8.16.3", trong khi `pg` khai `pg-pool` là `^3.10.1`. Bảng dòng 105 xếp `connectionTimeoutMillis` vào "driver `pg`". | Sửa `version` thành "lab dùng `pg` 8.16.3, `pg-pool` 3.14.0". Sửa ô trong bảng thành "`pg-pool`". |
+
+Tổng: 0 blocker, 0 major, 3 minor.
+
+Ghi chú:
+- **5 major của vòng 2:** cả 5 đã xử lý đúng.
+  - `db-drivers`: dòng 134 và `version` dòng 77 ghi 26.0.0, khớp Release Notes và npm.
+  - `db-orm` dòng 60: có "Lab với TypeORM 1.1.2, `pg` 8.16.3 cho thấy:". Số khớp output bước 9, 12, 13.
+  - `db-orm` dòng 106: đã ghi là kết quả lab và bỏ `[^typeorm-repo]`. Trang này không nói `save` đọc trước, nên bỏ là đúng. Nguồn vẫn được dùng ở dòng 81, 90, 92.
+  - `db-timeouts` dòng 109: mỗi vế đều khớp nguyên văn pg-set. Lab bước 9 phân biệt được hai lệnh sau `commit`: `0` với `set local`, `300ms` với `set` thường.
+  - `db-timeouts`: `pg-pool` 3.14.0 và Node.js v24.22.2 đã có ở bài và README, khớp lockfile, `node_modules`, `node --version` và dòng 4 của `output.txt`.
+- **Mâu thuẫn:** phần đã đổi không mâu thuẫn với phần còn lại của ba bài.
+  - Không còn sót `25.2.1` hay pid `177` trong bài hoặc README của `db-timeouts`.
+  - `db-drivers` và `db-orm` vẫn ghi v25.2.1, khớp output của chính chúng.
+  - Không có bài nào khác nhắc tới `set local`, kể cả ba bài `aidev-*`, nên không có trùng lặp. Các câu về `connectionTimeoutMillis` ở `db-connection-pool` khớp.
+- **Validate:** `176 chủ đề (skeleton: 146, draft: 6, verified: 24) · 0 lỗi · 0 cảnh báo`. Ba bài đủ 7 mục, `changelog` có đủ dòng cho từng vòng và mô tả đúng thay đổi.
+- **Lab:**
+  - Khối "Kết quả thật" trong README trùng `output.txt`.
+  - Tôi chạy lại `run.mjs` trên `lab-postgres-1` với Node.js v24.22.2. Sau khi bỏ mốc thời gian và pid, kết quả trùng `output.txt`.
+  - `lab/node_modules/pg-pool/index.js` dòng 344 gỡ `idleListener` khi cho mượn, khớp câu ở dòng 148.
+  - Schema `exp_to` đã xóa, cây làm việc vẫn sạch.
+  - Script phép thử pool: `C:\Users\lam.npn\AppData\Local\Temp\claude\D--lam-nguyen-Projects-fullstack-mindmap\1cfaf2e8-8dbf-44f5-b74d-c1ce04b942f7\scratchpad\r3\pool-set.mjs`.
+- **Ngoài phạm vi, không tính vào Tổng:** `db-orm` có 6 câu hỏi tự kiểm tra (dòng 135–140), vượt mức 3–5 của E.17.
+  - Câu thứ sáu được thêm ở 540de18 (vòng 1), hai vòng trước không nêu, và validator không kiểm điểm này.
+  - Trong các bài `verified` tôi đếm được, không bài nào quá 5 câu.
+  - Cần quyết trước khi đặt `verified`: bỏ một câu, hay ghi vào nhóm tồn và chấp nhận lệch E.17.
+
+### Xử lý
+
+Cả 3 minor giữ nguyên, chuyển sang nhóm tồn. Lý do chung: vòng 3 là vòng cuối, sau vòng này không viết câu mới.
+
+- `db-timeouts` dòng 109: giữ nguyên, thêm "trừ khi có `set` khác ghi đè" ở nhóm tồn.
+- `db-timeouts` dòng 109, 135, 137: giữ nguyên. Hệ quả với pool cần bước lab riêng trước khi viết, vì phép thử của người phản biện không nằm trong `lab/experiments/`.
+- `db-timeouts` dòng 56, 105: giữ nguyên, sửa `version` của np-pool và ô trong bảng ở nhóm tồn.
+
+Ghi chú ngoài phạm vi về số câu hỏi của `db-orm`: đã sửa. Xóa câu về `int8` (thêm ở vòng 1), bài còn 5 câu theo điểm 17 của checklist. Không có câu mới, và năm câu còn lại đã qua vòng 2 và vòng 3. Ý về `int8` vẫn có ở mục Cơ chế và mục Lỗi thường gặp.
+
+Kết luận vòng: sạch.
+
+## Vòng 3 — 02/11/2026 — nhóm B
+Bài: aidev-repo-context, aidev-reviewing-ai-code, aidev-tests-as-guardrails
+
+Nguồn đã mở:
+- cc-memory: mở được. Đã đọc các mục Size, Import, AGENTS.md, Auto memory và "My CLAUDE.md is too large" (WebFetch và bản Markdown thô).
+- cc-best: mở được, đọc toàn văn bản thô.
+- cc-changelog: mở được, đọc đầu trang và hai mục về `AGENTS.md`.
+- agents-md, gh-review-ai, google-review, google-small-cls: mở được, qua trích xuất của WebFetch, so các câu bài trích.
+- perry-2023: mở được, chỉ trang arXiv. Không mở lại PDF, vì phần đổi không trích và vòng 2 đã so số liệu với PDF.
+- this-repo-claude, release-script, pages-workflow: mở được (file ở HEAD).
+
+`npm run validate`: `176 chủ đề (skeleton: 146, draft: 6, verified: 24) · 0 lỗi · 0 cảnh báo`. Không có lỗi hay cảnh báo cho ba bài.
+
+Xét 2 major của vòng 2: cả hai đã xử lý đúng.
+- **Import (`aidev-repo-context` dòng 108–113):** câu mới khớp cc-memory, ở cả mục Size lẫn mục khắc phục sự cố. `supports` đã cập nhật đúng theo.
+- **Phiên bản (cả ba bài):** đã ghi trong câu và trong `version`, đúng vị trí vòng 2 đề xuất. Mục đầu changelog là 2.1.316, ngày October 31, 2026. `npm view` cũng cho bản `latest` là 2.1.316, sửa đổi ngày 31/10/2026.
+
+Không có mâu thuẫn mới với phần còn lại của bài. `db-drivers`, `db-orm`, `db-timeouts` không nhắc tới Claude Code hay các bài `aidev`. Dòng changelog vòng 2 của cả ba bài đúng với diff. Dòng soạn bài của `aidev-reviewing-ai-code` khớp nguyên văn bản ở b50e4ed. Dòng 86 của `aidev-repo-context` khớp changelog (2.1.277, September 18, 2026).
+
+| Bài | Vị trí (dòng) | Mức | Điểm checklist | Phát hiện | Đề xuất |
+|---|---|---|---|---|---|
+| aidev-repo-context | 108 (đối chiếu 90, 129) | minor | B6, E15 | "Có hai cách để file ngắn lại" đọc như danh sách đủ. Mục "My CLAUDE.md is too large" của cc-memory còn nêu "trim content that isn't needed in every session", và `/doctor` đề xuất cắt. Chính bài cũng dạy bỏ dòng ở phép thử hai câu. "Hai cách" đúng với việc chuyển nội dung đi, chưa đúng với việc làm file ngắn. Không sai cơ chế. | Nhóm tồn: "Ngoài việc bỏ dòng không qua phép thử, có hai chỗ để chuyển nội dung ra khỏi file:". |
+| aidev-repo-context | 5, 113 | minor | A3 | Sửa major làm mở lại minor dòng 5 của vòng 1. Gạch đầu dòng đã xóa là chỗ duy nhất nói cách đưa tài liệu sẵn có cho agent. Câu mới chỉ nói import để sắp xếp. `summary` vẫn có "tài liệu", còn thân bài chỉ nhắc README ở dòng 88 và 142. | Nhóm tồn: thêm một câu có nguồn về cách cho agent biết tài liệu nằm ở đâu mà không import cả file. |
+| aidev-tests-as-guardrails | 84, 96, 103, 122, 137 | minor | B7, B8 | Ghi bản ở dòng 84 đúng đề xuất vòng 2, nhưng câu đó chỉ gắn với ý "Claude dừng khi việc trông có vẻ xong". Bài không có câu phủ toàn bài như dòng 79 của `aidev-repo-context`. Vì vậy `/goal`, `Stop` hook, giới hạn tám lần và `/verify` không ghi bản ngay tại câu của chúng. Không xếp major vì cùng một trang tài liệu, các câu đều gắn `[^cc-best]`, và `TopicArticle.tsx` dòng 137 hiện `version` của nguồn. | Nhóm tồn: thêm câu phủ toàn bài như dòng 79 của `aidev-repo-context`. |
+| aidev-repo-context, aidev-reviewing-ai-code, aidev-tests-as-guardrails | repo-context 44; reviewing 50; tests 52 | minor | B5, C11 | `title` của cc-changelog là "Claude Code Docs — Changelog", còn trang thật có tiêu đề "Claude Code changelog". Các nguồn Claude Code khác theo mẫu "Claude Code Docs — <tiêu đề trang>". | Nhóm tồn: đổi thành "Claude Code Docs — Claude Code changelog". |
+
+Tổng: 0 blocker, 0 major, 4 minor.
+
+Ghi chú:
+- **Ngoài phạm vi, không tính vào Tổng:** `aidev-reviewing-ai-code` dòng 112 viết "Agent dừng khi việc trông có vẻ xong[^cc-best]", trong khi nguồn chỉ nói về Claude. Vòng 1 đã nêu đúng lỗi này ở `aidev-tests-as-guardrails`, và bài đó đã sửa. Dòng này không nằm trong diff, nên nên đưa vào nhóm tồn.
+- **Không sửa file nào trong repo.** Cây làm việc vẫn sạch sau khi chạy validate.
+
+### Xử lý
+
+Cả 4 minor giữ nguyên, chuyển sang nhóm tồn, cùng lý do với nhóm A:
+
+- `aidev-repo-context` dòng 108: giữ nguyên, nêu việc bỏ dòng cùng hai chỗ chuyển nội dung ở nhóm tồn.
+- `aidev-repo-context` dòng 5, 113: giữ nguyên, thêm cách cho agent biết tài liệu nằm ở đâu ở nhóm tồn.
+- `aidev-tests-as-guardrails` dòng 84, 96, 103, 122, 137: giữ nguyên, thêm câu phủ toàn bài về ngày đọc và phiên bản ở nhóm tồn.
+- Ba bài `aidev`, nguồn `cc-changelog`: giữ nguyên, đổi `title` thành "Claude Code Docs — Claude Code changelog" ở nhóm tồn.
+
+Ghi chú ngoài phạm vi về `aidev-reviewing-ai-code` dòng 112: chuyển sang nhóm tồn.
+
+Kết luận vòng: sạch.
+
+## Việc tồn cho chặng sau
+
+Số dòng theo báo cáo của từng vòng, nên kiểm lại khi sửa.
+
+Từ nhóm tồn, vòng 1 (6 minor):
+
+- `db-query-plan` dòng 79: khôi phục ý cột phụ thuộc không thu hẹp kết quả, sửa "hệ số đó".
+- `db-lsm-tree` dòng 104: viết "Khi bạn đặt filter policy, tức cấu hình cách tạo filter, mỗi file SST tạo mới có một Bloom filter; lab này không đặt."
+- `lab/README.md` và `learn-lab`: extension cần superuser, tạo role cần `CREATEROLE`.
+- `learn-lab` dòng 175: tách superuser thành gạch đầu dòng riêng, kèm thông báo thật `permission denied to create extension "pageinspect"`.
+- `pg-btree-impl`: `supports` nhắc dedup của CREATE INDEX; đặt `checkedAt: 2026-11-02` cho ba nguồn.
+- `db-transaction-acid` dòng 134, 136: "phần đầu của lab trên PostgreSQL 16 (yêu cầu `approved`, 0 dòng lịch sử)".
+
+Từ nhóm A:
+
+- `db-drivers` dòng 130, 61: "có thể dùng `BigInt`", sửa `supports` theo.
+- `db-drivers` dòng 117: "mảng tham số khác rỗng".
+- `db-drivers` dòng 19, 26: bổ sung hai điều kiện vào `supports`.
+- README `db-drivers`: thêm `pg-types` 2.2.0 vào mục Môi trường.
+- `db-orm` dòng 97: "một số câu `SELECT` phụ (lab bước 3, bước 5 SQL 3)".
+- `db-orm` dòng 104, 134: nói `update()` nhận điều kiện và nhiều id, kèm `[^typeorm-repo]`.
+- `db-orm` dòng 77, `db-timeouts` dòng 102: dùng đúng tiêu đề "Vấn đề N+1", "Locking và deadlock".
+- `db-timeouts` dòng 122: thêm "p50 là trung vị".
+- `db-timeouts` dòng 109: thêm "trừ khi có `set` khác ghi đè".
+- `db-timeouts` dòng 109, 135, 137: thêm bước lab cho thấy `set` thường đi theo kết nối sang lần mượn sau từ pool, rồi thêm một câu vào bài.
+- `db-timeouts` dòng 56, 105: `version` của np-pool ghi thêm `pg-pool` 3.14.0, ô bảng đổi thành "`pg-pool`".
+
+Từ nhóm B:
+
+- `aidev-repo-context`: thống nhất "session" và "phiên"; giải thích `managed setting`, `sandbox`.
+- `aidev-repo-context` dòng 97: "Hook là script" hẹp hơn nguồn.
+- `aidev-repo-context` dòng 95: "công cụ luôn áp dụng" và giới hạn của `Stop` hook.
+- `aidev-repo-context` dòng 77: cách nạp `AGENTS.md` của Claude Code, `.claude/CLAUDE.md`, session không đọc được `AGENTS.md`.
+- `aidev-repo-context` dòng 108: nêu việc bỏ dòng cùng hai chỗ chuyển nội dung.
+- `aidev-repo-context` dòng 5, 113: cách cho agent biết tài liệu nằm ở đâu mà không import cả file.
+- `aidev-reviewing-ai-code` dòng 112: "Agent dừng khi…" đổi về "Claude", đúng với nguồn.
+- `aidev-tests-as-guardrails` dòng 101, 102, 105: phần trùng với `aidev-reviewing-ai-code`.
+- `aidev-tests-as-guardrails` dòng 118: tách ý giá trị mong đợi khỏi `[^gh-review-ai]`.
+- `aidev-tests-as-guardrails` dòng 94, 128: biến `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP`.
+- `aidev-tests-as-guardrails` dòng 84, 96, 103, 122, 137: thêm câu phủ toàn bài về ngày đọc và phiên bản.
+- Ba bài `aidev`, nguồn `cc-changelog`: đổi `title` thành "Claude Code Docs — Claude Code changelog".
+- `aidev-writing-specs`: đối chiếu lại với trang best practices hiện hành (các ví dụ đã đổi từ 15/10).
+
+Từ chặng 3:
+
+- `db-lsm-tree/run.py`: đọc phiên bản bằng `importlib.metadata.version` ở lần chạy lại sau.
+- `db-normalization/run.mjs` dòng 21: ghi chú "Giống một màn hình…" ở lần chạy lại sau.
+- Chặng 6: harness dừng khi máy chủ không phải PostgreSQL 16.

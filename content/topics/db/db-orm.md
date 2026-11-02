@@ -3,7 +3,9 @@ id: db-orm
 title: ORM
 parent: db-app
 summary: "Ánh xạ object và bảng: lợi ích, chi phí và các truy vấn ORM sinh ra."
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-11-02
+verifiedBy: claude
 volatility: slow
 prerequisites:
   - db-drivers
@@ -47,6 +49,8 @@ changelog:
     note: "Phản biện vòng 1: tách rõ kết quả đếm giữa getRawMany và count(); thêm vào lab save() mảng, count(), cột int8 với hai cách khai báo; sửa lỗi về save() hàng loạt; bỏ ý không có căn cứ về update(); ghi các khuyến nghị là của bài; dùng đúng tên bài liên quan."
   - date: 2026-11-02
     note: "Phản biện vòng 2: ghi danh sách đổi kiểu và số câu SQL của save(), update() là kết quả lab, kèm phiên bản."
+  - date: 2026-11-02
+    note: "Phản biện vòng 3: không còn blocker hay major; bỏ câu hỏi về int8 để còn 5 câu theo điểm 17 của checklist; kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết
@@ -134,7 +138,6 @@ Trong output, `SELECT` nằm ngoài transaction, và khi không có gì đổi t
 
 - Trong lab, vì sao vòng lặp qua 5 dòng tốn 11 câu SQL chứ không phải 6? Bạn sửa thế nào để còn 1 câu?
 - `save()` và `update()` khác nhau thế nào về số câu SQL trong lab? Với 1.000 dòng cần đổi cùng một giá trị, bạn chọn cách nào, và vì sao?
-- Một cột `int8` khai báo `type: Number` trong entity. Lab cho thấy gì, và bạn khai báo thế nào để an toàn?
 - Một endpoint chậm dùng ORM. Liệt kê các bước tìm nguyên nhân, bắt đầu từ việc xem SQL thật.
 - `r.requester` là `undefined` dù dữ liệu có trong database. Vì sao, và sửa thế nào?
 - Nêu một trường hợp bạn sẽ dùng SQL viết tay thay vì repository của ORM, và cách truyền tham số an toàn.

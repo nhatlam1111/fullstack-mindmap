@@ -3,7 +3,9 @@ id: aidev-tests-as-guardrails
 title: Test làm lưới an toàn
 parent: aidev-review
 summary: Dùng test có sẵn và test viết trước để chặn thay đổi sai của agent.
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-11-02
+verifiedBy: claude
 volatility: fast
 prerequisites:
   - aidev-reviewing-ai-code
@@ -77,6 +79,8 @@ changelog:
     note: "Phản biện vòng 1: viết lại ví dụ release, nêu rõ không publish vẫn là chỉ dẫn và thêm ví dụ tất định là workflow Pages; ghi giới hạn tám lần chặn của Stop hook; test chỉ tất định khi gắn vào hook hoặc CI; ghi ngày đọc tài liệu; đánh dấu các ý là kinh nghiệm của bài; sửa tên bài liên quan."
   - date: 2026-11-02
     note: "Phản biện vòng 2: ghi bản Claude Code mới nhất ở ngày đọc, thêm nguồn changelog."
+  - date: 2026-11-02
+    note: "Phản biện vòng 3: không còn blocker hay major; minor để lại cho nhóm tồn chặng 5 (ghi ở docs/reviews/chang-04.md); kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết

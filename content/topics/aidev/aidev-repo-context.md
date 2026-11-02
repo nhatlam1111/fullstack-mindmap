@@ -3,7 +3,9 @@ id: aidev-repo-context
 title: Context cho agent trong repo
 parent: aidev-specs
 summary: File hướng dẫn repo, tài liệu và lệnh build, test mà agent cần biết.
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-11-02
+verifiedBy: claude
 volatility: fast
 prerequisites:
   - aidev-writing-specs
@@ -64,6 +66,8 @@ changelog:
     note: "Phản biện vòng 1: sửa cách Claude Code đọc AGENTS.md theo phiên bản và điều kiện của nguồn; thêm auto memory, skill, path-scoped rule, import; giới hạn của deny rule và sandbox; ghi ngày đọc tài liệu; nêu chỗ hai trang tài liệu khác nhau; khai báo ví dụ của trang AGENTS.md."
   - date: 2026-11-02
     note: "Phản biện vòng 2: tách import khỏi các cách làm file ngắn, vì import không giảm context; ghi bản Claude Code mới nhất ở ngày đọc, thêm nguồn changelog."
+  - date: 2026-11-02
+    note: "Phản biện vòng 3: không còn blocker hay major; minor để lại cho nhóm tồn chặng 5 (ghi ở docs/reviews/chang-04.md); kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết

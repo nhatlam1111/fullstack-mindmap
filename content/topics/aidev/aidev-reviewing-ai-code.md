@@ -3,7 +3,9 @@ id: aidev-reviewing-ai-code
 title: Review code do AI sinh
 parent: aidev-review
 summary: Đọc diff do agent tạo với cùng tiêu chuẩn như code của người.
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-11-02
+verifiedBy: claude
 volatility: fast
 prerequisites: []
 related:
@@ -70,6 +72,8 @@ changelog:
     note: "Phản biện vòng 1: đọc toàn văn nghiên cứu Perry và ghi cỡ mẫu, số tác vụ, giới hạn do tác giả nêu; tách suy luận của bài khỏi nguồn; ghi điều kiện và ngày đọc cho /code-review; thêm nguồn Small CLs và slopsquatting; chuyển ops-code-review từ prerequisites sang related."
   - date: 2026-11-02
     note: "Phản biện vòng 2: ghi bản Claude Code mới nhất ở ngày đọc, thêm nguồn changelog; trả dòng soạn bài về nguyên văn."
+  - date: 2026-11-02
+    note: "Phản biện vòng 3: không còn blocker hay major; minor để lại cho nhóm tồn chặng 5 (ghi ở docs/reviews/chang-04.md); kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết

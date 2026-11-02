@@ -3,7 +3,9 @@ id: db-timeouts
 title: Timeout và hủy truy vấn
 parent: db-app
 summary: Đặt giới hạn thời gian ở các tầng để một truy vấn chậm không làm treo hệ thống.
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-11-02
+verifiedBy: claude
 volatility: slow
 prerequisites:
   - db-connection-pool
@@ -82,6 +84,8 @@ changelog:
     note: "Phản biện vòng 1: bỏ ý sai về pg_dump (pg_dump tự đặt statement_timeout = 0), ghi dấu hiệu migration là suy luận; thêm vào lab connectionTimeoutMillis, client mượn bị kết thúc, set local sau rollback; sửa phần xử lý lỗi với pool; nêu giới hạn của cách chọn timeout; thêm PostgreSQL 17; ghi khuyến nghị là của bài."
   - date: 2026-11-02
     note: "Phản biện vòng 2: thêm nguồn SET và lab bước 9 so set local với set sau commit; ghi pg-pool và Node.js; bước 7 chạy thêm một câu trên client đang giữ."
+  - date: 2026-11-02
+    note: "Phản biện vòng 3: không còn blocker hay major; minor để lại cho nhóm tồn chặng 5 (ghi ở docs/reviews/chang-04.md); kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết

@@ -3,7 +3,9 @@ id: db-drivers
 title: Driver và client
 parent: db-app
 summary: "Cách ứng dụng nói chuyện với database: giao thức, driver, kết nối."
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-11-02
+verifiedBy: claude
 volatility: slow
 prerequisites:
   - db-database-dbms
@@ -89,6 +91,8 @@ changelog:
     note: "Phản biện vòng 1: giới hạn mở bài vào database client/server; dẫn mã nguồn pg cho việc dùng extended query khi có tham số; thêm số đo cộng tiền và count(*) vào lab; sửa cách nói về giới hạn của number, prepared statement; bổ sung điều kiện của nguồn."
   - date: 2026-11-02
     note: "Phản biện vòng 2: ghi node-oracledb 26.0.0."
+  - date: 2026-11-02
+    note: "Phản biện vòng 3: không còn blocker hay major; kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết
