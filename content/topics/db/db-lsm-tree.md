@@ -3,7 +3,9 @@ id: db-lsm-tree
 title: LSM-tree
 parent: db-storage
 summary: Cấu trúc tối ưu cho ghi nhiều, đánh đổi bằng compaction và đọc.
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-11-02
+verifiedBy: claude
 volatility: stable
 prerequisites:
   - db-btree
@@ -69,6 +71,8 @@ changelog:
     note: "Claude soạn bài từ bài báo LSM-tree gốc, wiki RocksDB, bài báo MyRocks (PVLDB 2020) và chạy thử nghiệm trên RocksDB 9.8.4."
   - date: 2026-11-02
     note: "Phản biện vòng 1: Bloom filter chỉ có khi đặt filter policy, 10 bit là ví dụ cấu hình chứ không phải mặc định; thêm prefix Bloom filter; thêm vai trò của WAL; làm rõ level sâu hơn, sorted run, amplification, seek; sửa phạm vi câu về ghi dồn dập."
+  - date: 2026-11-02
+    note: "Phản biện vòng 2: không còn blocker hay major; 6 minor để lại cho nhóm tồn chặng 4 (ghi ở docs/reviews/chang-03.md); kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết

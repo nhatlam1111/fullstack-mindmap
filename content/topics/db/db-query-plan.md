@@ -3,7 +3,9 @@ id: db-query-plan
 title: Query plan và EXPLAIN
 parent: db-storage
 summary: Đọc kế hoạch thực thi để biết database đã chọn cách truy cập nào.
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-11-02
+verifiedBy: claude
 volatility: slow
 prerequisites:
   - db-index-basics
@@ -56,6 +58,8 @@ changelog:
     note: "Claude soạn bài từ tài liệu PostgreSQL 16, Oracle AI Database Release 26 và chạy thử nghiệm trên PostgreSQL 16.15 với 1 triệu dòng."
   - date: 2026-11-02
     note: "Phản biện vòng 1: giải thích functional dependency; bỏ nhận định số trang ổn định hơn thời gian; dẫn node Gather của lab cho tổng số dòng."
+  - date: 2026-11-02
+    note: "Phản biện vòng 2: không còn blocker hay major; 6 minor để lại cho nhóm tồn chặng 4 (ghi ở docs/reviews/chang-03.md); kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết

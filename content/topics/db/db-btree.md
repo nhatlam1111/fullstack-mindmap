@@ -3,7 +3,9 @@ id: db-btree
 title: B-tree
 parent: db-storage
 summary: Cấu trúc index phổ biến nhất trong database quan hệ và các truy vấn nó hỗ trợ.
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-11-02
+verifiedBy: claude
 volatility: stable
 prerequisites:
   - db-index-basics
@@ -65,6 +67,8 @@ changelog:
     note: "Claude soạn bài từ tài liệu PostgreSQL 16, mã nguồn PostgreSQL nhánh REL_16_STABLE, Oracle AI Database Release 26 và chạy thử nghiệm trên PostgreSQL 16.15."
   - date: 2026-11-02
     note: "Phản biện vòng 1: sửa câu so số trang giữa các tầng cho khớp bảng số liệu; nêu số trang lab tính cả trang bảng; ghi đủ điều kiện deduplication; nói rõ C.UTF-8 không phải locale C chuẩn; bỏ các dấu hiệu chưa chạy trong lab hoặc không có trong nguồn."
+  - date: 2026-11-02
+    note: "Phản biện vòng 2: không còn blocker hay major; 6 minor để lại cho nhóm tồn chặng 4 (ghi ở docs/reviews/chang-03.md); kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết

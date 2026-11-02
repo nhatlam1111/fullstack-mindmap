@@ -3,7 +3,9 @@ id: db-index-basics
 title: Index
 parent: db-storage
 summary: Index giúp tìm dữ liệu nhanh hơn với chi phí khi ghi và dung lượng.
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-11-02
+verifiedBy: claude
 volatility: stable
 prerequisites:
   - db-tables-keys-constraints
@@ -72,6 +74,8 @@ changelog:
     note: "Claude soạn bài từ tài liệu PostgreSQL 16, Oracle AI Database Release 26 và chạy thử nghiệm trên PostgreSQL 16.15 với 1 triệu dòng."
   - date: 2026-11-02
     note: "Phản biện vòng 1: giải thích HOT, thêm nguồn; nêu index của PRIMARY KEY và UNIQUE còn giữ ràng buộc; bỏ nhận định số trang ổn định hơn thời gian."
+  - date: 2026-11-02
+    note: "Phản biện vòng 2: không còn blocker hay major; 6 minor để lại cho nhóm tồn chặng 4 (ghi ở docs/reviews/chang-03.md); kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết

@@ -3,7 +3,9 @@ id: db-access-patterns
 title: Mô hình truy vấn và thiết kế dữ liệu
 parent: db-storage
 summary: Các truy vấn ứng dụng cần chạy quyết định schema ở NoSQL và quyết định index ở database quan hệ.
-contentStatus: draft
+contentStatus: verified
+verifiedAt: 2026-11-02
+verifiedBy: claude
 volatility: slow
 prerequisites:
   - db-index-basics
@@ -92,6 +94,8 @@ changelog:
     note: "Claude soạn bài từ tài liệu PostgreSQL 16, Amazon DynamoDB Developer Guide, MongoDB Manual 9.0 và chạy thử nghiệm trên PostgreSQL 16.15 với 1 triệu dòng."
   - date: 2026-11-02
     note: "Phản biện vòng 1: giới hạn nhận định về NoSQL và việc chọn index, thêm vế RDBMS của nguồn; đổi summary cho khớp; bỏ các nhãn màn hình và danh sách còn lại, kể cả trong lab; chạy lại lab trong Docker, số trang và kế hoạch không đổi; ghi MongoDB 9.0."
+  - date: 2026-11-02
+    note: "Phản biện vòng 2: không còn blocker hay major; 6 minor để lại cho nhóm tồn chặng 4 (ghi ở docs/reviews/chang-03.md); kiểm chứng."
 ---
 
 ## Vấn đề cần giải quyết

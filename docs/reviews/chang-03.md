@@ -157,8 +157,88 @@ Ghi chú:
 Blocker và 4 major đã sửa theo đề xuất. Trong 22 minor, 19 đã sửa theo đề xuất, với các ghi chú sau.
 
 - db-access-patterns, lab (major): đổi nhãn trong `run.mjs` và README rồi chạy lại lab trong container `postgres:16` trên máy Lam (ngày 02/11/2026). Số trang và kế hoạch giống hệt lần chạy 16/10, nên không số nào trong bài đổi. README ghi môi trường mới và nói rõ lần chạy cũ.
-- db-query-plan dòng 87 và db-index-basics dòng 120 (minor): đã sửa trong bài. README của lab db-index-basics vẫn còn câu tương tự: giữ nguyên, chuyển sang nhóm tồn.
+- db-query-plan dòng 87 và db-index-basics dòng 120 (minor): đã sửa trong bài. README của lab db-index-basics vẫn còn câu tương tự: giữ nguyên ở chặng này vì câu đó nằm trong lab, không phải trong bài, và không làm sai số đo nào; chuyển sang nhóm tồn.
 - db-query-plan, liên kết từ db-joins dòng 97 (minor): giữ nguyên ở chặng này vì phải sửa bài đã kiểm chứng; chuyển sang nhóm tồn (đổi liên kết ở db-joins sang bài Index).
 - db-lsm-tree, `run.py` (minor): giữ nguyên: `requirements.txt` đã cố định `rocksdict==0.3.25`, nên chuỗi in ra đúng với lần chạy; sửa script thì phải chạy lại lab mà không đổi kết luận nào. Chuyển sang nhóm tồn.
 
 Kết luận vòng: cần vòng sau.
+
+## Vòng 2 — 02/11/2026 — nhóm A
+Bài: db-index-basics, db-query-plan, db-btree, db-lsm-tree, db-access-patterns
+
+Nguồn đã mở:
+- ddb-nosql-design: mở được
+- mongodb-data-modeling: mở được (trang ghi v9.0 Current)
+- pg-hot: mở được
+- pg-planner-stats: mở được
+- pg-using-explain: mở được
+- pg-btree-impl: mở được
+- pg-nbtree-readme: mở được (bản raw REL_16_STABLE)
+- pg-indexes-opclass: mở được
+- rocksdb-overview: mở được
+- rocksdb-bloom: mở được
+- rocksdb-compaction: mở được
+- rocksdb-leveled: mở được
+- myrocks-pvldb: mở được (tải PDF, trích bằng pdftotext, đọc mục 3.2.2.1, 3.2.2.2 và đoạn về burst writes)
+- Trang web và wiki đọc qua trích xuất của WebFetch; mọi câu bài dẫn đều đã so với đoạn trích. Không mở lại các nguồn có câu dẫn không đổi sau vòng 1.
+
+| Bài | Vị trí (dòng) | Mức | Điểm checklist | Phát hiện | Đề xuất |
+|---|---|---|---|---|---|
+| db-query-plan | 73 | minor | B4, B6 | "Planner biết giá trị một cột quyết định giá trị cột kia" nói mạnh hơn nguồn. pg-planner-stats ghi `ANALYZE` đo mức phụ thuộc, planner điều chỉnh theo hệ số ("using the dependency coefficients"), và chỉ áp cho điều kiện bằng với hằng và `IN`, không cho khoảng hay `LIKE`. Câu đúng với lab vì phụ thuộc ở đó là hoàn toàn. Câu `CREATE STATISTICS` cũng mất `[^pg-planner-stats]` riêng. | Viết: "Với tùy chọn `dependencies`, `ANALYZE` đo mức phụ thuộc giữa các cột; với điều kiện bằng so với hằng và `IN`, planner dùng hệ số đó để không ước tính thiếu". Gắn lại `[^pg-planner-stats]` cho câu trước. |
+| db-btree | 100 (liên quan câu hỏi 134) | minor | B4, E15 | Vế mới "tức không đi qua đường chèn lười" không có `[^id]`. Bài cũng chưa nói `CREATE INDEX` có deduplication, nên người đọc không rõ vì sao index trong lab vẫn nhỏ. pg-btree-impl có câu đỡ: "`CREATE INDEX` and `REINDEX` apply deduplication to create posting list tuples, though the strategy they use is slightly different". | Thêm: "`CREATE INDEX` cũng áp dụng deduplication, theo chiến lược hơi khác[^pg-btree-impl]". |
+| db-btree | 92 | minor | E15 | Vòng 1 nêu hai ý, bản sửa mới xử lý một ý. Câu mới đặt `Heap Fetches` 100 cạnh 6 trang mà không giải thích vì sao 100 lần vào bảng chỉ tốn vài trang. | Thêm một vế từ số lab: 100 `id` liên tiếp nằm trên vài trang bảng liền nhau (khoảng 89 dòng mỗi trang, 1.000.000 dòng trên 11.236 trang). |
+| db-lsm-tree | 98, 106 | minor | E19 | `filter policy` là thuật ngữ mới, chưa giải thích, và đứng trước câu định nghĩa Bloom filter. `Seek` mới thêm ở dòng 98 nằm trước chú thích seek ở dòng 106, nên chú thích không còn ở lần đầu dùng. | Đưa câu định nghĩa Bloom filter lên trước, giải thích ngắn `filter policy`, chuyển chú thích seek lên dòng 98. |
+| db-index-basics | 129 (liên quan 109–110, 128) | minor | C11, E15 | "Thời gian là một lần đo" lệch với bảng ghi 3 lần và README dòng 26 ghi "bước 4 là ba lần". "Bài dựa chủ yếu vào số trang" chỉ đúng phần đọc; phần chi phí ghi dựa hoàn toàn vào thời gian. | Viết: "Thời gian là một lần đo (phần chèn là ba lượt) trên máy build dùng chung; phần đọc so bằng số trang, phần ghi chỉ so tương đối trong cùng lần chạy". |
+| db-index-basics (README lab) | README 26; docs/reviews/chang-03.md 160 | minor | D13, quy định phần Xử lý | Xử lý ghi "giữ nguyên" nhưng không nêu lý do, trong khi `docs/kiem-chung.md` yêu cầu "giữ nguyên: lý do…". Việc sửa cũng rẻ, vì README chỉ đổi chữ và không phải chạy lại lab. | Ghi lý do ở dòng 160, hoặc bỏ vế "Số trang (`Buffers`) ổn định hơn thời gian" khỏi README. |
+
+Tổng: 0 blocker, 0 major, 6 minor.
+
+Ghi chú:
+- **Phát hiện vòng 1:**
+  - Blocker và 4 major đều xử lý đúng. Mọi câu mới khớp nguồn hoặc output, gồm câu về filter policy, 10 bit, prefix Bloom filter, vế RDBMS của DynamoDB và câu so số trang của B-tree.
+  - Trong 19 minor đã sửa, 18 đúng. Minor seek gây phát hiện 4 vì câu mới thêm `Seek` trước chú thích. Phát hiện 3 là phần còn lại của minor Heap Fetches, tuy đề xuất vòng 1 không yêu cầu phần này.
+- **Lý do giữ nguyên:**
+  - `run.py` hợp lý: `requirements.txt` có `rocksdict==0.3.25`.
+  - Liên kết db-joins dòng 97 hợp lý: đây là bài đã kiểm chứng, và đích mới có nội dung ở db-index-basics dòng 91.
+  - README db-index-basics thiếu lý do (phát hiện 6).
+- **Lab db-access-patterns:**
+  - So `output.txt` cũ và mới sau khi che số mili giây: chỉ khác dòng phiên bản, thời điểm chạy, NOTICE đầu và hai dòng nhãn đã đổi. Số trang và kế hoạch giữ nguyên.
+  - README có khối output giống hệt `output.txt`.
+  - Mọi số trong bài khớp output: 1.621, 203, 23, 11.236, 96.774, 1.112 kB, 38 MB, 7, 4.
+  - Tôi không chạy lại lab. Môi trường trong README khớp đối chiếu chỉ đọc trên container `lab-postgres-1` hôm nay: 16.15 Debian, `shared_buffers` 128MB, 2 worker, `en_US.utf8`, Docker báo 16 CPU và 15,48 GiB.
+  - Tên `pending_list` trong `prepare` vẫn còn. Đây là định danh SQL, không phải kịch bản nên tôi không tính.
+- **Changelog:** 5 dòng mới mô tả đúng thay đổi.
+- **`npm run validate`:** 176 chủ đề (skeleton 152, verified 19, draft 5), 0 lỗi, 0 cảnh báo; không có gì liên quan tới 5 bài. Cây làm việc vẫn sạch.
+- **Mâu thuẫn:** không có với db-tables-keys-constraints (dòng 80–81) và db-normalization (dòng 94, 98). HOT ở db-index-basics khớp db-btree dòng 107.
+- **Ngoài bài:** `docs/reviews/chang-03.md` dòng 95 trỏ tới mục "Việc tồn cho chặng sau" cuối file, nhưng mục này chưa có. Cần thêm trước khi đóng chặng.
+
+### Xử lý
+
+- Phát hiện 1–5 (5 minor trong bài): giữ nguyên ở chặng này và chuyển sang nhóm tồn của chặng 4: sửa bây giờ thì cần thêm một vòng cho phần chữ mới, và không minor nào làm sai nhận định chính của bài.
+- Phát hiện 6: đã sửa phần Xử lý của vòng 1 (ghi lý do); câu trong README chuyển sang nhóm tồn.
+- Mục "Việc tồn cho chặng sau": đã thêm ở cuối file.
+
+Kết luận vòng: sạch. Cả 5 bài lên `verified`, `verifiedBy: claude`, `verifiedAt: 2026-11-02`.
+
+## Việc tồn cho chặng sau
+
+Các việc dưới đây thành nhóm tồn ở chặng 4: sửa rồi phản biện thành một nhóm riêng.
+
+Từ nhóm tồn vòng 2:
+- `db-transaction-acid` dòng 134: "giống hệt khi chạy không có `BEGIN`" nằm trong mục về Oracle; viết "giống hệt bước một của lab trên PostgreSQL 16".
+- `learn-practice-case` dòng 126: giải thích "replica" ở lần đầu dùng; gắn `[^aca-pricing]` cho hai câu về cách tính tiền và giá idle.
+- `db-transaction-acid` dòng 84, 86 và `learn-practice-case` dòng 78, 80: phân lại ý giữa các dòng changelog cho đúng từng bước.
+- `lab/README.md` dòng 21 và `learn-lab`: dùng PostgreSQL có sẵn thì role phải là superuser, và 2 lab tạo role `lab_app`, `lab_schema_user`.
+
+Từ nhóm A:
+- `db-query-plan` dòng 73: viết lại câu về `dependencies` theo đúng mức của nguồn (đo mức phụ thuộc, dùng hệ số, chỉ với điều kiện bằng và `IN`); gắn lại nguồn.
+- `db-btree` dòng 100: thêm "`CREATE INDEX` cũng áp dụng deduplication, theo chiến lược hơi khác".
+- `db-btree` dòng 92: giải thích vì sao 100 lần vào bảng chỉ tốn vài trang.
+- `db-lsm-tree` dòng 98, 106: đưa định nghĩa Bloom filter lên trước, giải thích `filter policy`, chuyển chú thích seek lên lần đầu dùng.
+- `db-index-basics` dòng 129: sửa câu "Thời gian là một lần đo" cho khớp phần ba lượt chèn.
+- README lab `db-index-basics` dòng 26: bỏ vế "Số trang (`Buffers`) ổn định hơn thời gian".
+- `db-joins` dòng 97: đổi liên kết sang bài Index.
+- `lab/experiments/db-lsm-tree/run.py`: đọc phiên bản `rocksdict` bằng `importlib.metadata.version` thay vì viết cứng, ở lần chạy lại lab.
+- `lab/experiments/db-normalization/run.mjs` dòng 21: note "Giống một màn hình…" (kịch bản tự nghĩ, ở lần chạy lại lab).
+
+Để chặng 6: bước dừng trong `header()` của `lab/lib/harness.mjs` khi máy chủ không phải PostgreSQL 16.
