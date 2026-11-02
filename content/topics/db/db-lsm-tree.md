@@ -21,7 +21,7 @@ sources:
   - id: rocksdb-overview
     url: https://github.com/facebook/rocksdb/wiki/RocksDB-Overview
     title: "RocksDB Wiki — RocksDB Overview"
-    supports: "Ba thành phần cơ bản của RocksDB là memtable, sstfile và logfile; logfile là Write Ahead Log ghi tuần tự; mọi thao tác ghi (Put, Delete, Merge) được lưu vào bộ đệm trong bộ nhớ gọi là memtable; memtable đầy thì thành immutable memtable và một luồng nền flush nội dung ra storage, vào một file ở Level-0, và logfile tương ứng có thể xóa an toàn; dữ liệu mới hơn ở L0, dữ liệu cũ hơn ở các level số lớn hơn tới Lmax; compaction loại bỏ các cặp khóa-giá trị đã bị xóa hoặc ghi đè và tổ chức lại dữ liệu cho truy vấn hiệu quả; Level style mặc định tối ưu space amplification; Universal style thường có write amplification thấp hơn nhưng space và read amplification cao hơn."
+    supports: "Ba thành phần cơ bản của RocksDB là memtable, sstfile và logfile; logfile là Write Ahead Log ghi tuần tự; ghi vào WAL là tùy chọn; khi khởi động lại, RocksDB xử lý lại các transaction đã ghi trong log; mọi thao tác ghi (Put, Delete, Merge) được lưu vào bộ đệm trong bộ nhớ gọi là memtable; memtable đầy thì thành immutable memtable và một luồng nền flush nội dung ra storage, vào một file ở Level-0, và logfile tương ứng có thể xóa an toàn; dữ liệu mới hơn ở L0, dữ liệu cũ hơn ở các level số lớn hơn tới Lmax; compaction loại bỏ các cặp khóa-giá trị đã bị xóa hoặc ghi đè và tổ chức lại dữ liệu cho truy vấn hiệu quả; Level style mặc định tối ưu space amplification; Universal style thường có write amplification thấp hơn nhưng space và read amplification cao hơn."
     product: RocksDB
     version: "wiki, không gắn phiên bản (lab dùng 9.8.4)"
     checkedAt: 2026-10-16
@@ -42,14 +42,14 @@ sources:
   - id: rocksdb-bloom
     url: https://github.com/facebook/rocksdb/wiki/RocksDB-Bloom-Filter
     title: "RocksDB Wiki — RocksDB Bloom Filter"
-    supports: "Bloom filter là mảng bit cho biết một khóa có thể có hoặc chắc chắn không có trong một tập khóa; mỗi file SST mới tạo chứa một Bloom filter; nó giảm I/O, CPU và việc thay đổi block cache cho DB::Get; whole key bloom chỉ dùng cho tra cứu một khóa; mặc định khoảng 10 bit mỗi khóa, phần lớn nằm trong bộ nhớ và trên đĩa."
+    supports: "Bloom filter là mảng bit cho biết một khóa có thể có hoặc chắc chắn không có trong một tập khóa; khi đặt filter policy, mỗi file SST mới tạo chứa một Bloom filter; nó giảm I/O, CPU và việc thay đổi block cache cho DB::Get; ví dụ cấu hình NewBloomFilterPolicy(10, false) dùng khoảng 10 bit mỗi khóa, số bit chỉnh được; whole key bloom chỉ dùng cho tra cứu một khóa; khi đặt prefix_extractor, hash của tiền tố cũng vào filter, và prefix bloom có thể dùng lúc Seek, SeekForPrev nếu bật check_filter."
     product: RocksDB
     version: "wiki, không gắn phiên bản (lab dùng 9.8.4)"
     checkedAt: 2026-10-16
   - id: myrocks-pvldb
     url: https://www.vldb.org/pvldb/vol13/p3217-matsunobu.pdf
     title: "Matsunobu, Dong, Lee (Facebook) — MyRocks: LSM-Tree Database Storage Engine Serving Facebook's Social Graph, PVLDB 13(12), 2020"
-    supports: "Facebook dùng InnoDB (storage engine dựa trên B+Tree) và thấy cấu trúc B-tree lãng phí chỗ do phân mảnh index, write amplification cao hơn và thỉnh thoảng nghẽn khi ghi xuống flash; nhóm chọn LSM-tree thay B-tree để tiết kiệm chỗ với cái giá là hiệu năng đọc; MyRocks giảm kích thước instance 62,3% cho tập dữ liệu UDB, ít thao tác I/O hơn và ít CPU hơn InnoDB khi phục vụ cùng tải production; lượng byte ghi xuống flash giảm 75%; xóa được xử lý bằng cách thêm marker, tombstone vẫn còn vì có thể có Put cho cùng khóa ở file SST level thấp hơn, compaction bỏ tombstone khi chúng tới Lmax; nhiều tombstone làm quét theo khoảng chậm đi đáng kể vì phải quét qua mọi tombstone, nhóm thêm kiểu xóa SingleDelete; quét theo khoảng phải tìm nhị phân trong từng sorted run rồi gộp bằng heap, LSM-tree có chi phí seek cao hơn nhiều; duyệt ngược chậm hơn nhiều so với duyệt xuôi; compaction, nhất là khi do ghi dồn dập, có thể gây nghẽn; Bloom filter lưu trong mỗi file SST để bỏ qua việc tìm không cần thiết, hiệu năng LSM-tree cần cache Bloom filter trong bộ nhớ."
+    supports: "Facebook dùng InnoDB (storage engine dựa trên B+Tree) và thấy cấu trúc B-tree lãng phí chỗ do phân mảnh index, write amplification cao hơn và thỉnh thoảng nghẽn khi ghi xuống flash; nhóm chọn LSM-tree thay B-tree để tiết kiệm chỗ với cái giá là hiệu năng đọc; MyRocks giảm kích thước instance 62,3% cho tập dữ liệu UDB, ít thao tác I/O hơn và ít CPU hơn InnoDB khi phục vụ cùng tải production; lượng byte ghi xuống flash giảm 75%; xóa được xử lý bằng cách thêm marker, tombstone vẫn còn vì có thể có Put cho cùng khóa ở file SST level thấp hơn, compaction bỏ tombstone khi chúng tới Lmax; nhiều tombstone làm quét theo khoảng chậm đi đáng kể vì phải quét qua mọi tombstone, nhóm thêm kiểu xóa SingleDelete; quét theo khoảng phải tìm nhị phân trong từng sorted run rồi gộp bằng heap, LSM-tree có chi phí seek cao hơn nhiều; duyệt ngược chậm hơn nhiều so với duyệt xuôi; compaction, nhất là khi do ghi dồn dập, có thể gây nghẽn; Bloom filter lưu trong mỗi file SST để bỏ qua việc tìm không cần thiết, hiệu năng LSM-tree cần cache Bloom filter trong bộ nhớ; prefix bloom filter để bỏ qua các sorted run không có khóa mang tiền tố cho trước, giúp các lượt quét có điều kiện bằng trên tiền tố; burst writes là một trong những nguyên nhân gây nghẽn phổ biến nhất ở LSM-tree database như RocksDB."
     product: MyRocks (MySQL + RocksDB) tại Facebook
     version: PVLDB 13(12), 2020
     checkedAt: 2026-10-16
@@ -67,6 +67,8 @@ examples:
 changelog:
   - date: 2026-10-16
     note: "Claude soạn bài từ bài báo LSM-tree gốc, wiki RocksDB, bài báo MyRocks (PVLDB 2020) và chạy thử nghiệm trên RocksDB 9.8.4."
+  - date: 2026-11-02
+    note: "Phản biện vòng 1: Bloom filter chỉ có khi đặt filter policy, 10 bit là ví dụ cấu hình chứ không phải mặc định; thêm prefix Bloom filter; thêm vai trò của WAL; làm rõ level sâu hơn, sorted run, amplification, seek; sửa phạm vi câu về ghi dồn dập."
 ---
 
 ## Vấn đề cần giải quyết
@@ -77,31 +79,31 @@ LSM-tree (Log-Structured Merge-Tree) giải quyết bằng cách không ghi ngay
 
 ## Cơ chế và luồng hoạt động
 
-Phần dưới mô tả theo RocksDB, một storage engine LSM-tree, và lab chạy RocksDB 9.8.4.
+Phần dưới mô tả theo RocksDB, một storage engine LSM-tree. Wiki RocksDB không gắn phiên bản; lab chạy RocksDB 9.8.4.
 
 **Ba thành phần.** RocksDB có memtable, sstfile và logfile. Logfile là Write Ahead Log, ghi tuần tự[^rocksdb-overview].
 
-**Ghi vào bộ nhớ trước.** Mọi thao tác ghi (`Put`, `Delete`, `Merge`) được lưu vào một bộ đệm trong bộ nhớ gọi là memtable[^rocksdb-overview]. Lab bước 1: ghi 100.000 khóa xong vẫn chưa có file SST nào, memtable chiếm 10.487.808 byte, và đọc khóa vẫn có kết quả.
+**Ghi vào bộ nhớ trước.** Mọi thao tác ghi (`Put`, `Delete`, `Merge`) được lưu vào một bộ đệm trong bộ nhớ gọi là memtable, và có thể ghi thêm vào Write Ahead Log (WAL). Khi khởi động lại, RocksDB xử lý lại các transaction đã ghi trong log[^rocksdb-overview]. Lab bước 1: ghi 100.000 khóa xong vẫn chưa có file SST nào, memtable chiếm 10.487.808 byte, và đọc khóa vẫn có kết quả.
 
 **Flush ra file SST ở level 0.** Memtable đầy thì thành immutable memtable, và một luồng nền ghi nội dung của nó ra một file ở Level-0 (L0); logfile tương ứng sau đó có thể xóa an toàn[^rocksdb-overview]. Lab bước 2 gọi flush thủ công: có 1 file SST ở L0 với 100.000 entry, 1.583.440 byte.
 
 **Ghi đè không sửa file cũ.** Dữ liệu mới hơn nằm ở L0, dữ liệu cũ hơn nằm ở các level số lớn hơn[^rocksdb-overview]. Lab bước 3 ghi đè cả 100.000 khóa rồi flush: có 2 file ở L0, mỗi file 100.000 entry. Bản cũ vẫn nằm nguyên trong file thứ nhất, nhưng đọc khóa `req:000042` trả về giá trị mới (`approved`).
 
-**Xóa là ghi thêm một marker.** Trong LSM-tree, xóa được xử lý bằng cách thêm marker, gọi là tombstone. Tombstone phải ở lại vì có thể còn bản `Put` của cùng khóa trong file SST ở level thấp hơn[^myrocks-pvldb]. Lab bước 4 xóa 50.000 khóa rồi flush: file thứ ba có 50.000 entry, cả 50.000 đều là deletion. Tổng dung lượng tăng từ 3.172.124 lên 3.516.344 byte dù vừa xóa một nửa số khóa; đọc khóa đã xóa trả `None`.
+**Xóa là ghi thêm một marker.** Trong LSM-tree, xóa được xử lý bằng cách thêm marker, gọi là tombstone. Tombstone phải ở lại vì có thể còn bản `Put` của cùng khóa trong file SST ở level sâu hơn (số lớn hơn)[^myrocks-pvldb]. Lab bước 4 xóa 50.000 khóa rồi flush: file thứ ba có 50.000 entry, cả 50.000 đều là deletion. Tổng dung lượng tăng từ 3.172.124 lên 3.516.344 byte dù vừa xóa một nửa số khóa; đọc khóa đã xóa trả `None`.
 
 **Compaction dọn dẹp.** Compaction loại bỏ các cặp khóa-giá trị đã bị xóa hoặc bị ghi đè và tổ chức lại dữ liệu để truy vấn hiệu quả[^rocksdb-overview]. RocksDB bỏ tombstone trong compaction khi chúng tới level cuối[^myrocks-pvldb]. Lab bước 5 gọi compaction thủ công: ba file gộp thành một file với 50.000 entry, 0 deletion, 697.772 byte. Lab ghi nhận file này nằm ở level 6 chứ không phải level 1. Tài liệu RocksDB cho biết từ bản 8.4, tùy chọn `level_compaction_dynamic_level_bytes` mặc định bật, nhằm giữ cấu trúc ổn định với khoảng 90% dữ liệu ở level cuối[^rocksdb-leveled]; bài này không đi sâu vào cách RocksDB chọn level đích.
 
-**Các level.** Với leveled compaction của RocksDB, các file ở L0 thường chồng lấn khoảng khóa. Mỗi level còn lại là một sorted run, chia theo khoảng khóa vào nhiều file SST. Compaction tự động bắt đầu khi số file ở L0 đạt `level0_file_num_compaction_trigger`[^rocksdb-leveled]. Trong một level, tìm một khóa là tìm nhị phân trên khoảng khóa của các file để biết file nào có thể chứa nó[^rocksdb-leveled].
+**Các level.** Với leveled compaction của RocksDB, các file ở L0 thường chồng lấn khoảng khóa. Mỗi level còn lại là một sorted run (một dãy khóa đã sắp, không chồng lấn), chia theo khoảng khóa vào nhiều file SST. Compaction tự động bắt đầu khi số file ở L0 đạt `level0_file_num_compaction_trigger`[^rocksdb-leveled]. Trong một level, tìm một khóa là tìm nhị phân trên khoảng khóa của các file để biết file nào có thể chứa nó[^rocksdb-leveled].
 
-**Đọc cần thêm trợ giúp.** Một khóa có thể có bản ở nhiều file (lab bước 3). RocksDB gắn Bloom filter vào mỗi file SST mới. Bloom filter cho biết một khóa có thể có, hoặc chắc chắn không có, trong file; nhờ vậy giảm I/O và CPU khi đọc một khóa (`DB::Get`). Bloom filter theo nguyên khóa chỉ dùng cho tra cứu một khóa, và mặc định tốn khoảng 10 bit mỗi khóa[^rocksdb-bloom]. Quét theo khoảng thì phải tìm nhị phân trong từng sorted run rồi gộp kết quả bằng heap[^myrocks-pvldb].
+**Đọc cần thêm trợ giúp.** Một khóa có thể có bản ở nhiều file (lab bước 3). Khi đặt filter policy, mỗi file SST mới có một Bloom filter; lab này không đặt. Bloom filter cho biết một khóa có thể có, hoặc chắc chắn không có, trong file; nhờ vậy giảm I/O và CPU khi đọc một khóa (`DB::Get`). Bloom filter theo nguyên khóa chỉ dùng cho tra cứu một khóa. Ví dụ cấu hình trong wiki dùng khoảng 10 bit mỗi khóa, và số bit chỉnh được[^rocksdb-bloom]. Quét theo khoảng thì phải tìm nhị phân trong từng sorted run rồi gộp kết quả bằng heap[^myrocks-pvldb]. Prefix Bloom filter giúp được một phần việc này: khi đặt `prefix_extractor`, hash của tiền tố khóa cũng vào filter, và có thể dùng lúc `Seek`[^rocksdb-bloom]. Facebook dùng nó cho các lượt quét có điều kiện bằng trên tiền tố của khóa, để bỏ qua sorted run không có khóa nào mang tiền tố đó[^myrocks-pvldb].
 
-**Các kiểu compaction.** Trên RocksDB, leveled compaction giảm tối thiểu space amplification (dung lượng thực so với dữ liệu logic), đổi lại read và write amplification cao hơn. Tiered compaction (Universal) giảm tối thiểu write amplification, đổi lại read và space amplification cao hơn. FIFO compaction bỏ file cũ nhất khi hết hạn, dùng cho dữ liệu kiểu cache[^rocksdb-compaction][^rocksdb-overview].
+**Các kiểu compaction.** Trên RocksDB, leveled compaction giảm tối thiểu space amplification (dung lượng thực so với dữ liệu logic), đổi lại read amplification (đọc thêm bao nhiêu so với dữ liệu cần) và write amplification (ghi xuống đĩa bao nhiêu so với dữ liệu ứng dụng ghi) cao hơn. Tiered compaction (Universal) giảm tối thiểu write amplification, đổi lại read và space amplification cao hơn. FIFO compaction bỏ file cũ nhất khi hết hạn, dùng cho dữ liệu kiểu cache[^rocksdb-compaction][^rocksdb-overview].
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 
 - **Hợp khi ghi nhiều hơn đọc.** Theo bài báo gốc, LSM-tree có ích nhất khi chèn vào index phổ biến hơn tìm; các lượt tìm cần trả lời ngay sẽ mất hiệu quả I/O trong một số trường hợp[^oneil-lsm].
 - **Lợi về dung lượng và lượng ghi.** Facebook chọn LSM-tree (MyRocks) thay B-tree (InnoDB) để tiết kiệm chỗ, chấp nhận đọc chậm hơn. Kết quả họ công bố: kích thước instance giảm 62,3% với tập dữ liệu UDB, byte ghi xuống flash giảm 75%[^myrocks-pvldb].
-- **Đọc theo khoảng tốn hơn.** LSM-tree có chi phí seek cao hơn nhiều so với B-tree, và trên RocksDB duyệt ngược chậm hơn nhiều so với duyệt xuôi[^myrocks-pvldb].
+- **Đọc theo khoảng tốn hơn.** LSM-tree có chi phí seek (tìm vị trí bắt đầu của một lượt quét) cao hơn nhiều so với B-tree, và trên RocksDB duyệt ngược chậm hơn nhiều so với duyệt xuôi[^myrocks-pvldb].
 - **Xóa không giải phóng chỗ ngay.** Tombstone chiếm chỗ tới khi compaction bỏ đi[^myrocks-pvldb]; lab: xóa một nửa số khóa mà dung lượng tăng thêm 344.220 byte.
 - **Compaction tốn tài nguyên nền.** Compaction, nhất là khi do ghi dồn dập, có thể gây nghẽn[^myrocks-pvldb]. Chọn kiểu compaction là chọn giữa read, write và space amplification[^rocksdb-compaction].
 - **Cần bộ nhớ cho Bloom filter.** Hiệu năng LSM-tree cần Bloom filter được cache trong bộ nhớ[^myrocks-pvldb].
@@ -110,7 +112,7 @@ Phần dưới mô tả theo RocksDB, một storage engine LSM-tree, và lab ch�
 
 - **Nghĩ rằng xóa sẽ giảm dung lượng ngay.** Dấu hiệu: dung lượng đĩa không giảm, thậm chí tăng, sau khi xóa hàng loạt (lab bước 4), và chỉ giảm sau compaction (lab bước 5).
 - **Xóa nhiều rồi quét theo khoảng qua vùng vừa xóa.** Nhiều tombstone làm quét theo khoảng chậm đi đáng kể vì phải quét qua mọi tombstone[^myrocks-pvldb]. Dấu hiệu: truy vấn khoảng chậm hẳn sau đợt xóa lớn. Facebook thêm kiểu xóa `SingleDelete` để giảm vấn đề này[^myrocks-pvldb].
-- **Ghi dồn dập không kiểm soát.** Dấu hiệu: độ trễ ghi tăng vọt theo đợt; với MyRocks, ghi dồn dập là một trong những nguyên nhân gây nghẽn phổ biến nhất[^myrocks-pvldb].
+- **Ghi dồn dập không kiểm soát.** Dấu hiệu: độ trễ ghi tăng vọt theo đợt; với LSM-tree database như RocksDB, ghi dồn dập là một trong những nguyên nhân gây nghẽn phổ biến nhất[^myrocks-pvldb].
 - **Dùng `ORDER BY ... DESC` như trên B-tree.** Trên MyRocks, truy vấn `ORDER BY` theo chiều cần duyệt ngược chậm hơn nhiều so với chiều xuôi[^myrocks-pvldb]. Dấu hiệu: cùng truy vấn nhưng đảo chiều sắp xếp thì chậm hẳn.
 - **Chọn LSM-tree cho tải chủ yếu đọc cần trả lời ngay.** Dấu hiệu: đọc chậm hơn engine B-tree trong khi lượng ghi không đáng kể[^oneil-lsm].
 
@@ -132,7 +134,7 @@ Phần dưới mô tả theo RocksDB, một storage engine LSM-tree, và lab ch�
 
 - Trong lab, sau khi ghi đè 100.000 khóa, bản cũ nằm ở đâu, và vì sao đọc vẫn ra giá trị mới?
 - Vì sao xóa 50.000 khóa lại làm dung lượng tăng? Khi nào dung lượng giảm?
-- Bloom filter trả lời câu hỏi gì, và vì sao nó không giúp được quét theo khoảng?
+- Bloom filter theo nguyên khóa trả lời câu hỏi gì, và vì sao nó không giúp được quét theo khoảng? Prefix Bloom filter giúp được trường hợp nào?
 - Leveled compaction và tiered compaction đánh đổi gì với nhau?
 - Facebook được gì và mất gì khi chuyển từ InnoDB sang MyRocks?
 

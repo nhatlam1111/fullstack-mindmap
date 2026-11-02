@@ -22,7 +22,7 @@ sources:
   - id: pg-planner-stats
     url: https://www.postgresql.org/docs/16/planner-stats.html
     title: "PostgreSQL 16 — 14.2. Statistics Used by the Planner"
-    supports: "Planner cần ước tính số dòng truy vấn trả về để chọn kế hoạch tốt; reltuples và relpages không cập nhật tức thì, được VACUUM, ANALYZE và vài lệnh DDL như CREATE INDEX cập nhật; pg_statistic do ANALYZE và VACUUM ANALYZE cập nhật, luôn là gần đúng; giới hạn số mục của most_common_vals và histogram_bounds đặt theo cột bằng ALTER TABLE SET STATISTICS hoặc toàn cục bằng default_statistics_target, mặc định 100, tăng lên có thể ước tính chính xác hơn nhưng tốn chỗ và thời gian; truy vấn chậm thường do các cột trong điều kiện tương quan, planner mặc định coi các điều kiện độc lập; CREATE STATISTICS tạo extended statistics, ANALYZE thu thập dữ liệu."
+    supports: "Planner cần ước tính số dòng truy vấn trả về để chọn kế hoạch tốt; reltuples và relpages không cập nhật tức thì, được VACUUM, ANALYZE và vài lệnh DDL như CREATE INDEX cập nhật; pg_statistic do ANALYZE và VACUUM ANALYZE cập nhật, luôn là gần đúng; giới hạn số mục của most_common_vals và histogram_bounds đặt theo cột bằng ALTER TABLE SET STATISTICS hoặc toàn cục bằng default_statistics_target, mặc định 100, tăng lên có thể ước tính chính xác hơn nhưng tốn chỗ và thời gian; truy vấn chậm thường do các cột trong điều kiện tương quan, planner mặc định coi các điều kiện độc lập; CREATE STATISTICS tạo extended statistics, ANALYZE thu thập dữ liệu; với functional dependency, điều kiện trên cột phụ thuộc không thu hẹp thêm kết quả, và planner điều chỉnh ước tính để không đánh giá thấp."
     product: PostgreSQL
     version: "16"
     checkedAt: 2026-10-16
@@ -54,6 +54,8 @@ examples:
 changelog:
   - date: 2026-10-16
     note: "Claude soạn bài từ tài liệu PostgreSQL 16, Oracle AI Database Release 26 và chạy thử nghiệm trên PostgreSQL 16.15 với 1 triệu dòng."
+  - date: 2026-11-02
+    note: "Phản biện vòng 1: giải thích functional dependency; bỏ nhận định số trang ổn định hơn thời gian; dẫn node Gather của lab cho tổng số dòng."
 ---
 
 ## Vấn đề cần giải quyết
@@ -68,7 +70,7 @@ SQL chỉ nói cần kết quả gì; database tự chọn cách lấy (xem bài
 
 **`EXPLAIN ANALYZE` chạy thật.** Nó thực sự chạy câu lệnh, rồi in số dòng và thời gian thực tế của từng node bên cạnh số ước tính. Khi một node chạy nhiều lần, `loops` là số lần chạy, còn thời gian và số dòng thực tế là trung bình mỗi lần[^pg-using-explain]. Thêm `BUFFERS` để biết phần nào đọc nhiều trang nhất[^pg-using-explain].
 
-**Số ước tính đến từ thống kê.** Planner cần ước tính số dòng để chọn kế hoạch[^pg-planner-stats]. Thống kê do `ANALYZE` và `VACUUM ANALYZE` thu thập và luôn là gần đúng[^pg-planner-stats]. Mặc định planner coi các điều kiện trong `WHERE` là độc lập với nhau; khi các cột tương quan, ước tính có thể sai, và `CREATE STATISTICS` cho phép thu thập thống kê trên nhiều cột[^pg-planner-stats].
+**Số ước tính đến từ thống kê.** Planner cần ước tính số dòng để chọn kế hoạch[^pg-planner-stats]. Thống kê do `ANALYZE` và `VACUUM ANALYZE` thu thập và luôn là gần đúng[^pg-planner-stats]. Mặc định planner coi các điều kiện trong `WHERE` là độc lập với nhau; khi các cột tương quan, ước tính có thể sai, và `CREATE STATISTICS` cho phép thu thập thống kê trên nhiều cột. Với tùy chọn `dependencies`, planner biết giá trị một cột quyết định giá trị cột kia, nên điều kiện trên cột phụ thuộc không làm ước tính bị thu nhỏ thêm[^pg-planner-stats].
 
 **Một node hay gặp: Bitmap Heap Scan.** Đây là kế hoạch hai bước. Node con đi qua index để tìm vị trí các dòng khớp; node trên sắp các vị trí đó theo thứ tự vật lý rồi mới đọc bảng, để giảm chi phí đọc rời rạc[^pg-using-explain].
 
@@ -82,9 +84,9 @@ SQL chỉ nói cần kết quả gì; database tự chọn cách lấy (xem bài
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 
-- **`EXPLAIN` không chạy câu lệnh**, nên an toàn, nhưng chỉ cho ước tính.
+- **`EXPLAIN` không chạy câu lệnh**, nên an toàn, nhưng chỉ cho ước tính[^pg-using-explain].
 - **`EXPLAIN ANALYZE` chạy thật**, nên lệnh ghi sẽ ghi thật. Tài liệu PostgreSQL 16 gợi ý bọc trong `BEGIN` và `ROLLBACK` nếu không muốn đổi dữ liệu[^pg-using-explain].
-- **Thời gian đo có sai lệch.** Thời gian của `EXPLAIN ANALYZE` không gồm chi phí gửi kết quả qua mạng và chuyển đổi dữ liệu, còn bản thân việc đo có thể tốn đáng kể[^pg-using-explain]. So sánh số trang (`Buffers`) thường ổn định hơn so sánh mili giây.
+- **Thời gian đo có sai lệch.** Thời gian của `EXPLAIN ANALYZE` không gồm chi phí gửi kết quả qua mạng và chuyển đổi dữ liệu, còn bản thân việc đo có thể tốn đáng kể[^pg-using-explain]. Vì vậy bài này so cả số trang (`Buffers`), không chỉ mili giây.
 - **Không suy rộng từ bảng nhỏ.** Kết quả trên bảng cỡ đồ chơi không áp dụng được cho bảng lớn[^pg-using-explain].
 - **Thống kê chi tiết hơn có giá.** Tăng giới hạn thống kê (mặc định 100) có thể cho ước tính chính xác hơn, đổi lại tốn chỗ và thời gian `ANALYZE`[^pg-planner-stats].
 - **Index giúp cả sắp xếp.** Với `ORDER BY` kèm `LIMIT n`, sắp xếp tường minh phải xử lý mọi dòng, còn index khớp `ORDER BY` thì lấy thẳng `n` dòng đầu[^pg-indexes-ordering]. Lab: 11.350 trang so với 4 trang.
@@ -93,7 +95,7 @@ SQL chỉ nói cần kết quả gì; database tự chọn cách lấy (xem bài
 
 - **Đọc `cost` như thời gian.** Cost là đơn vị tùy ý[^pg-using-explain]. Dấu hiệu: so sánh cost giữa hai máy hoặc hai cấu hình khác nhau.
 - **Bỏ qua chênh lệch giữa ước tính và thực tế.** Dấu hiệu: `rows=10` trong khi `actual rows=200`. Nguyên nhân hay gặp là cột tương quan hoặc thống kê cũ (lab bước 2 và 3). Cách sửa: `CREATE STATISTICS` cho cột tương quan, `ANALYZE` khi dữ liệu đổi nhiều[^pg-planner-stats].
-- **Đọc sai số dòng của node song song.** `actual rows` là trung bình mỗi lần chạy[^pg-using-explain]. Dấu hiệu: `actual rows=100000 loops=2` mà nghĩ là 100.000 dòng, trong khi tổng là 200.000.
+- **Đọc sai số dòng của node song song.** `actual rows` là trung bình mỗi lần chạy[^pg-using-explain]. Dấu hiệu: `actual rows=100000 loops=2` mà nghĩ là 100.000 dòng, trong khi tổng là 200.000. Trong lab, node `Gather` phía trên cho thấy `actual rows=200000 loops=1`.
 - **Chạy `EXPLAIN ANALYZE` một lệnh ghi trên dữ liệu thật mà không rollback.** Dấu hiệu: dữ liệu bị đổi sau khi "chỉ xem kế hoạch".
 - **Tin `EXPLAIN PLAN` của Oracle là kế hoạch đã chạy.** Kế hoạch giải thích có thể khác kế hoạch thực tế[^ora-explain]. Dấu hiệu: `EXPLAIN PLAN` cho thấy index nhưng câu lệnh vẫn chậm; dùng `DISPLAY_CURSOR` để xem kế hoạch thật.
 

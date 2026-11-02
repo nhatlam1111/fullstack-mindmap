@@ -1,4 +1,4 @@
-// Thiết kế index theo truy vấn của màn hình "Yêu cầu của tôi": thứ tự cột trong index ghép, cột dẫn đầu, covering index, partial index.
+// Thiết kế index theo một truy vấn cụ thể (20 yêu cầu mới nhất của một người gửi): thứ tự cột trong index ghép, cột dẫn đầu, covering index, partial index.
 import { header, session, step, note } from '../../lib/harness.mjs';
 import { makeRequests } from '../../lib/requests-1m.mjs';
 
@@ -8,7 +8,7 @@ await makeRequests(s, 'exp_ap');
 await s.q('analyze requests');
 const mine = `select id, status, created_at from requests where requester_id = 1234 order by created_at desc limit 20`;
 const ex = async (sql) => { await s.q(sql, undefined, { quiet: true }); return s.q(`explain (analyze, buffers, costs off, timing off) ${sql}`); };
-note('Truy vấn của màn hình "Yêu cầu của tôi": 20 yêu cầu mới nhất của một người gửi.');
+note('Truy vấn: 20 yêu cầu mới nhất của một người gửi.');
 
 step('1. Chỉ có index trên created_at');
 await s.q('create index ap_created on requests (created_at)');
@@ -41,7 +41,7 @@ note('Bảng chưa được VACUUM nên visibility map chưa đánh dấu trang 
 await s.q('vacuum requests');
 await ex(mine);
 
-step('6. Partial index cho danh sách chờ duyệt');
+step('6. Partial index cho truy vấn yêu cầu pending');
 const pending = `select id, requester_id, created_at from requests where status = 'pending' order by created_at desc limit 20`;
 await s.q('create index ap_status_created on requests (status, created_at)');
 await s.q(`create index ap_pending_created on requests (created_at) where status = 'pending'`);

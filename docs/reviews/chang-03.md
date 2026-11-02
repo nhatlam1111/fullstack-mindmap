@@ -45,3 +45,53 @@ Tổng: 0 blocker, 1 major, 7 minor.
 - harness.mjs, bước dừng khi không phải PostgreSQL 16 (minor): giữ nguyên: rủi ro thấp (PostgreSQL 17 trên máy Lam không có role `lab`, lab đặt tên schema bắt đầu bằng `exp_`), và muốn làm đúng thì cần thử với một PostgreSQL khác phiên bản trong container. Để chặng 6 (vận hành database), khi lab có dịp dựng thêm phiên bản.
 
 Kết luận vòng: cần vòng sau.
+
+## Vòng 2 — 29/10/2026 — nhóm tồn
+Bài: db-transaction-acid, learn-practice-case, learn-lab, lab/experiments/db-transaction-acid/README.md (câu hỏi và kết luận), 17 README lab PostgreSQL (dòng gợi ý chạy lại)
+
+Nguồn đã mở (đọc ngày 02/11/2026; tiêu đề giữ theo mẫu):
+- pg-tx-tutorial: mở được.
+- ora-transactions: mở được.
+- aca-pricing: mở được (tải HTML bằng curl, đọc phần Consumption plan, chú thích Active usage và FAQ).
+- compose-services: mở được.
+- lab-harness (lab/lib/harness.mjs, cùng lab/lib/requests-1m.mjs), lab-readme, mm-roadmap (chặng 6, 19): mở được ở HEAD 3dacb3f.
+- lab/experiments/db-transaction-acid/output.txt và run.mjs: đã đọc.
+- 17 run.mjs: đã rà bằng grep các lệnh kết nối, tạo schema, role, extension.
+- docs/reviews/chang-03.md: đã đọc phần nhóm tồn.
+- Mở thêm để đối chiếu, bài không dẫn: learn.microsoft.com/azure/container-apps/billing, PostgreSQL 16 contrib, pgstattuple, pageinspect: mở được.
+- Không mở lại các nguồn khác vì câu dẫn chúng không đổi sau vòng 1.
+
+Kiểm phát hiện vòng 1:
+1. **learn-practice-case, major (giá idle):** xử lý đúng. Dòng 126 có điều kiện số replica tối thiểu. Bốn điều kiện của replica không hoạt động là phép đảo đúng của câu "A replica enters active mode…" và chú thích ngưỡng 0.01 cores, 1,000 bytes.
+2. **learn-practice-case, minor ("allocated"):** xử lý đúng. Không thêm trang Learn billing là hợp lý, vì bảng giá đủ đỡ câu ("are allocated", "when they are running"). Trang Learn cũng nói cùng ý.
+3. **db-transaction-acid, minor (cách nói):** đã sửa ở dòng 134, 140, 141, nhưng dòng 134 sinh ra phát hiện 1 dưới đây.
+4. **db-transaction-acid, minor ("mỗi lệnh tự commit"):** xử lý đúng. "(mỗi lệnh là một transaction riêng)" khớp nguồn.
+5. **README lab, minor:** xử lý đúng. Câu hỏi và kết luận khớp output. "(mỗi lệnh tự commit nếu thành công)" khớp "(if successful) `COMMIT`". `output.txt` không đổi.
+6. **learn-lab, minor (supports compose-services):** xử lý đúng. Các ý còn lại khớp trang Docker.
+7. **PGDATABASE, minor:** xử lý đúng. 17/17 README và learn-lab dòng 173 khớp nguyên văn. Không còn gợi ý cũ trong lab, content, docs (trừ docs/reviews). Không run.mjs nào ghi cứng tên database; db-connection-pool dùng `config.database`.
+8. **harness.mjs, giữ nguyên:** lý do hợp lý.
+   - Mọi schema lab đều bắt đầu bằng `exp_` (4 lab qua `makeRequests`); db-connection-pool không tạo schema.
+   - Chặng 6 có "vận hành database" trong tiêu đề.
+   - Không tự kiểm được ý "PostgreSQL 17 trên máy Lam không có role `lab`", vì không đăng nhập vào PostgreSQL đó.
+
+Số liệu đối chiếu khớp: 23502, 25P02, `approved`/0 dòng lịch sử, `pending`, 180.000, 360.000, 2 triệu, 0,01, 1.000, 17 README. `docker compose version` cho v5.5.1, `node --version` cho v25.2.1.
+
+Đã kiểm mâu thuẫn với learn-using-mindmap và db-normalization: không có. Hai bài này không nói gì về `BEGIN`, tự commit, PGPORT hay idle; tiêu chí Đã hiểu không đổi sau vòng 1.
+
+`npm run validate`: 176 chủ đề (skeleton 152, verified 19, draft 5), 0 lỗi, 0 cảnh báo; không có gì liên quan tới các bài này. Cây làm việc vẫn sạch sau khi chạy.
+
+| Bài | Vị trí (dòng) | Mức | Điểm checklist | Phát hiện | Đề xuất |
+|---|---|---|---|---|---|
+| db-transaction-acid | 134 | minor | B.7, E.19 | Mục về Oracle viết "giống hệt khi chạy không có `BEGIN`", không ghi sản phẩm. `BEGIN` ở đây là cách nói của PostgreSQL. Trang Oracle ghi "A transaction begins when the first executable SQL statement is encountered" và không nhắc lệnh BEGIN. Trên Oracle, chạy không có `BEGIN` là trạng thái thường và transaction vẫn mở, nên người đọc có thể hiểu Oracle cần `BEGIN` mới có transaction. Phép so sánh về dữ liệu vẫn đúng nếu đọc theo dòng 132, nên giữ ở minor. Câu này theo đúng đề xuất của vòng 1. | Viết "giống hệt bước một của lab trên PostgreSQL 16". |
+| learn-practice-case | 126 | minor | E.19 | "replica" dùng lần đầu ở thân bài tại đây mà không giải thích, trong khi cả đoạn dựa vào nó. "active" cũng chỉ được hiểu gián tiếp qua câu sau. | Thêm chú thích ngắn ở lần đầu, ví dụ "replica (một bản chạy của app)". Trang Learn billing có câu "runs replicas of your application" nếu cần nguồn. |
+| learn-practice-case | 126 | minor | B.4 | Hai câu mới (cách tính theo allocated; điều kiện giá idle với 0,01 vCPU và 1.000 byte) không có `[^aca-pricing]` riêng. Dấu nguồn chỉ nằm ở câu về 0 replica. Các con số đúng với nguồn. | Thêm `[^aca-pricing]` sau hai câu đó. |
+| db-transaction-acid; learn-practice-case | acid 84, 86; practice-case 78, 80 | minor | F.21 | Gộp hai dòng thì mô tả đúng thay đổi, nhưng phân bổ theo bước thì lệch. Dòng 84 (viết lại) gán cho bước nhóm tồn cả dấu hiệu Oracle, "mỗi lệnh là một transaction riêng" và README, là những việc chỉ làm sau vòng 1. Dòng 86 lại không nhắc dòng Oracle và README. Dòng 78 cũng được thêm "khi đã về số replica tối thiểu", trùng với dòng 80 và không đúng với bản 973dab2. | Chuyển các ý đó sang dòng "Phản biện vòng 1 nhóm tồn" để mỗi dòng ghi đúng việc của bước mình. |
+| lab/README.md; learn-lab | lab/README.md 21 (17 README dòng 11); learn-lab 173 | minor | D.12, E.16 | Gợi ý nay nhận `PGUSER` khác `lab` nhưng không nói role đó cần superuser. db-btree và db-mvcc chạy `create extension` với `pageinspect`, `pgstattuple`, hai extension không có trong danh sách trusted của PostgreSQL 16, nên `CREATE EXTENSION` cần superuser. db-connection-pool và db-schema-data-model tạo role đăng nhập ở mức cluster, mật khẩu trùng tên role. Harness in lỗi SQL rồi chạy tiếp, nên script không dừng mà output thiếu bước. Điều này rút ra từ run.mjs và tài liệu, chưa chạy thử với role thường. | Ghi một ý ở lab/README.md dòng 21 và learn-lab dòng 173: dùng PostgreSQL có sẵn thì role phải là superuser, và 2 lab sẽ tạo role `lab_app`, `lab_schema_user`. Không cần sửa cả 17 README. |
+
+Tổng: 0 blocker, 0 major, 5 minor.
+
+### Xử lý
+
+Cả 5 minor giữ nguyên ở chặng này và chuyển sang nhóm tồn của chặng 4 (xem "Việc tồn cho chặng sau" cuối file): sửa bây giờ thì cần thêm một vòng cho phần chữ mới, trong khi không minor nào làm sai nhận định chính của bài.
+
+Kết luận vòng: sạch. `db-transaction-acid` và `db-normalization` giữ `verifiedAt: 2026-10-15`; `learn-practice-case` và `learn-lab` giữ `verifiedAt: 2026-10-29`, vì lần này chỉ phần đã đổi được phản biện.

@@ -47,6 +47,13 @@ sources:
     product: PostgreSQL
     version: "16"
     checkedAt: 2026-10-16
+  - id: pg-hot
+    url: https://www.postgresql.org/docs/16/storage-hot.html
+    title: "PostgreSQL 16 — 73.7. Heap-Only Tuples (HOT)"
+    supports: "HOT dùng được khi update không sửa cột nào mà các index của bảng tham chiếu (không tính summarizing index) và trang chứa dòng cũ còn đủ chỗ; khi đó không cần mục index mới cho dòng đã update."
+    product: PostgreSQL
+    version: "16"
+    checkedAt: 2026-11-02
   - id: ora-indexes
     url: https://docs.oracle.com/en/database/oracle/oracle-database/26/cncpt/indexes-and-index-organized-tables.html
     title: "Oracle AI Database Concepts — Indexes and Index-Organized Tables"
@@ -63,6 +70,8 @@ examples:
 changelog:
   - date: 2026-10-16
     note: "Claude soạn bài từ tài liệu PostgreSQL 16, Oracle AI Database Release 26 và chạy thử nghiệm trên PostgreSQL 16.15 với 1 triệu dòng."
+  - date: 2026-11-02
+    note: "Phản biện vòng 1: giải thích HOT, thêm nguồn; nêu index của PRIMARY KEY và UNIQUE còn giữ ràng buộc; bỏ nhận định số trang ổn định hơn thời gian."
 ---
 
 ## Vấn đề cần giải quyết
@@ -93,7 +102,7 @@ Trong lab, sau khi tạo index trên `requester_id`, cùng truy vấn chỉ đ�
 
 Điều kiện "tỷ lệ nhỏ" thấy rõ trong lab. Index trên `status` được dùng khi lọc `pending` (5% số dòng), nhưng planner bỏ qua nó khi lọc `approved` (75%) và quét cả bảng.
 
-**Giá phải trả khi ghi.** Index phải luôn đồng bộ với bảng, nên mọi thao tác ghi tốn thêm công. Index còn có thể ngăn tối ưu heap-only tuple (HOT) của PostgreSQL. Vì vậy tài liệu PostgreSQL 16 khuyên xóa index ít hoặc không bao giờ được dùng[^pg-indexes-intro]. Oracle cũng ghi rằng nhiều index trên một bảng làm DML chậm đi[^ora-indexes]. Trong lab:
+**Giá phải trả khi ghi.** Index phải luôn đồng bộ với bảng, nên mọi thao tác ghi tốn thêm công. Index còn có thể ngăn tối ưu heap-only tuple (HOT) của PostgreSQL: một `UPDATE` không đụng cột nào có index, và trang còn đủ chỗ, thì không cần mục index mới[^pg-hot]. Vì vậy tài liệu PostgreSQL 16 khuyên xóa index ít hoặc không bao giờ được dùng[^pg-indexes-intro]. Oracle cũng ghi rằng nhiều index trên một bảng làm DML chậm đi[^ora-indexes]. Trong lab:
 
 | Bảng | Số index | Chèn 200.000 dòng (3 lần) | Dung lượng sau lần cuối |
 | --- | --- | --- | --- |
@@ -105,7 +114,7 @@ Trong lab, sau khi tạo index trên `requester_id`, cùng truy vấn chỉ đ�
 ## Lỗi thường gặp và dấu hiệu nhận biết
 
 - **Index cột mà truy vấn lọc ra phần lớn bảng.** Planner có thể không bao giờ dùng nó, trong khi mọi lần ghi vẫn phải cập nhật nó. Dấu hiệu: `EXPLAIN` vẫn ra `Seq Scan` sau khi tạo index, như lọc `approved` trong lab.
-- **Giữ index không ai dùng.** Dấu hiệu: cột `idx_scan` của `pg_stat_user_indexes` đứng yên qua thời gian dài. View này cho thống kê về việc truy cập từng index; thống kê tích lũy không cập nhật tức thì, nên đọc sau một khoảng thời gian chứ không ngay sau truy vấn[^pg-monitoring].
+- **Giữ index không ai dùng.** Dấu hiệu: cột `idx_scan` của `pg_stat_user_indexes` đứng yên qua thời gian dài. Dấu hiệu này chưa đủ với index của `PRIMARY KEY` và `UNIQUE`, vì chúng còn giữ ràng buộc (xem bài về khóa và ràng buộc). View này cho thống kê về việc truy cập từng index; thống kê tích lũy không cập nhật tức thì, nên đọc sau một khoảng thời gian chứ không ngay sau truy vấn[^pg-monitoring].
 - **Thử index trên dữ liệu quá nhỏ.** Tài liệu PostgreSQL 16 gọi việc này là đặc biệt tai hại: lấy 1 trong 100 dòng khó là ứng viên cho index, vì 100 dòng đó có thể nằm gọn trong một trang. Tài liệu khuyên thử bằng dữ liệu thật[^pg-indexes-examine]. Dấu hiệu: index không được dùng trên máy dev nhưng lại cần trên production, hoặc ngược lại.
 - **Xem kế hoạch mà chưa `ANALYZE`.** Tài liệu gọi việc xem xét cách dùng index mà chưa chạy `ANALYZE` là vô ích[^pg-indexes-examine]. Dấu hiệu: số dòng ước tính trong `EXPLAIN` lệch xa thực tế.
 - **Tạo index thường trên bảng lớn đang nhận ghi.** Ghi bị chặn suốt thời gian tạo index[^pg-indexes-intro]. Dấu hiệu: các lệnh `INSERT`, `UPDATE` treo trong lúc migration chạy.
@@ -117,7 +126,7 @@ Trong lab, sau khi tạo index trên `requester_id`, cùng truy vấn chỉ đ�
     - Tạo index trên `requester_id` mất 0,53 giây, index chiếm 6.728 kB. Sau đó: `Bitmap Index Scan` rồi `Bitmap Heap Scan`, đọc 203 trang, 0,410 ms.
     - Index trên `status`: lọc `pending` dùng index nhưng vẫn đọc cả 11.236 trang bảng, vì dòng pending rải khắp bảng; lọc `approved` thì planner quét tuần tự.
     - Chèn 200.000 dòng vào bảng có 4 index chậm hơn bảng không index từ 4,9 đến 6,5 lần tùy lượt, trong lần chạy này (bảng ở trên).
-    - Thời gian là một lần đo trên máy build dùng chung; số trang ổn định hơn thời gian.
+    - Thời gian là một lần đo trên máy build dùng chung, nên bài dựa chủ yếu vào số trang.
 
 ## Câu hỏi tự kiểm tra
 

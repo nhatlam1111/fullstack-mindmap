@@ -63,11 +63,13 @@ examples:
 changelog:
   - date: 2026-10-16
     note: "Claude soạn bài từ tài liệu PostgreSQL 16, mã nguồn PostgreSQL nhánh REL_16_STABLE, Oracle AI Database Release 26 và chạy thử nghiệm trên PostgreSQL 16.15."
+  - date: 2026-11-02
+    note: "Phản biện vòng 1: sửa câu so số trang giữa các tầng cho khớp bảng số liệu; nêu số trang lab tính cả trang bảng; ghi đủ điều kiện deduplication; nói rõ C.UTF-8 không phải locale C chuẩn; bỏ các dấu hiệu chưa chạy trong lab hoặc không có trong nguồn."
 ---
 
 ## Vấn đề cần giải quyết
 
-Bài Index cho thấy index giúp tìm 200 dòng trong 1 triệu dòng mà không quét cả bảng. Để làm được vậy, cấu trúc của index phải đáp ứng cùng lúc nhiều việc: tìm một giá trị, tìm theo khoảng, trả dữ liệu đã sắp xếp, và vẫn nhanh khi bảng liên tục được chèn thêm. B-tree là cấu trúc làm được những việc đó; nó là loại index phổ biến nhất trong database[^ora-indexes] và là loại `CREATE INDEX` tạo mặc định trên PostgreSQL 16[^pg-index-types].
+Bài Index cho thấy index giúp tìm 200 dòng trong 1 triệu dòng mà không quét cả bảng. Để làm được vậy, cấu trúc của index phải đáp ứng cùng lúc nhiều việc: tìm một giá trị, tìm theo khoảng và trả dữ liệu đã sắp xếp, trong khi bảng vẫn liên tục thay đổi. B-tree là cấu trúc làm được những việc đó; nó là loại index phổ biến nhất trong database[^ora-indexes] và là loại `CREATE INDEX` tạo mặc định trên PostgreSQL 16[^pg-index-types].
 
 ## Cơ chế và luồng hoạt động
 
@@ -83,33 +85,33 @@ Lab soi index khóa chính của bảng 1 triệu yêu cầu bằng extension `p
 | 1 | trong | 10 | 2.742 |
 | 0 | lá | 2.733 | 1.002.732 |
 
-Một triệu khóa chỉ cần ba tầng, và 99,60% số trang là trang lá. Lý do là mỗi trang chứa được hàng trăm mục: chia từ bảng trên, trung bình khoảng 367 mục mỗi trang lá và 274 mục mỗi trang trong, nên mỗi tầng phía trên có ít trang hơn tầng dưới hàng trăm lần. Tầng lá có 1.002.732 mục chứ không phải đúng 1.000.000, vì mục đầu tiên trên mỗi trang không nằm ngoài cùng bên phải là high key của trang[^pg-pageinspect]: 2.733 trang lá thì có 2.732 high key.
+Một triệu khóa chỉ cần ba tầng, và 99,60% số trang là trang lá. Lý do là mỗi trang chứa được hàng trăm mục: chia từ bảng trên, trung bình khoảng 367 mục mỗi trang lá và 274 mục mỗi trang trong, nên một trang trong trỏ được tới hàng trăm trang ở tầng dưới: 2.733 trang lá chỉ cần 10 trang trong, và trang gốc mới dùng 10 mục. Tầng lá có 1.002.732 mục chứ không phải đúng 1.000.000, vì mục đầu tiên trên mỗi trang không nằm ngoài cùng bên phải là high key của trang[^pg-pageinspect]: 2.733 trang lá thì có 2.732 high key.
 
 **Tìm một khóa.** Lượt tìm đi từ gốc, ở mỗi tầng chọn nhánh có khoảng chứa khóa, xuống tới trang lá, rồi theo con trỏ sang bảng. Tài liệu Oracle nói tìm một giá trị trong index tốn n lần I/O, với n là chiều cao của B-tree[^ora-indexes]. Trong lab, tìm `id = 777777` đọc 4 trang, phù hợp với 3 trang index (một trang mỗi tầng) cộng 1 trang bảng.
 
-**Quét theo khoảng và theo thứ tự.** Trên PostgreSQL 16, mỗi tầng của cây dùng được như một danh sách liên kết đôi các trang[^pg-btree-impl]; Oracle cũng mô tả các leaf block liên kết đôi[^ora-indexes]. Vì vậy sau khi tìm tới đầu khoảng, lượt quét chỉ việc đi dọc các trang lá, xuôi hoặc ngược. Lab: lấy 100 `id` liên tiếp đọc 6 trang; `order by id desc limit 5` dùng `Index Only Scan Backward` và đọc 4 trang.
+**Quét theo khoảng và theo thứ tự.** Trên PostgreSQL 16, mỗi tầng của cây dùng được như một danh sách liên kết đôi các trang[^pg-btree-impl]; Oracle cũng mô tả các leaf block liên kết đôi[^ora-indexes]. Vì vậy sau khi tìm tới đầu khoảng, lượt quét chỉ việc đi dọc các trang lá, xuôi hoặc ngược. Lab: lấy 100 `id` liên tiếp đọc 6 trang; `order by id desc limit 5` dùng `Index Only Scan Backward` và đọc 4 trang. Hai số này tính cả trang bảng, vì `Heap Fetches` là 100 và 5.
 
 **Các phép so sánh B-tree hỗ trợ.** Trên PostgreSQL 16, planner cân nhắc B-tree khi cột có index nằm trong so sánh `<`, `<=`, `=`, `>=`, `>`, và cả `BETWEEN`, `IN`, `IS NULL`, `IS NOT NULL`. `LIKE` dùng được nếu mẫu là hằng và neo ở đầu chuỗi (`col LIKE 'foo%'`), không dùng được với `col LIKE '%bar'`. B-tree cũng trả dữ liệu theo thứ tự đã sắp[^pg-index-types].
 
-**Khi trang đầy: tách trang.** Trang lá không chứa nổi tuple mới thì PostgreSQL thêm trang lá mới. Khi đến lượt trang gốc không chứa nổi downlink mới, root page split tạo trang gốc mới ở tầng cao hơn, cây thêm một tầng[^pg-btree-impl]. Cây cao lên từ gốc nên mọi lá vẫn ở cùng độ sâu.
+**Khi trang đầy: tách trang.** Trang lá không chứa nổi tuple mới thì PostgreSQL thêm trang lá mới. Khi đến lượt trang gốc không chứa nổi downlink mới, root page split tạo trang gốc mới ở tầng cao hơn, cây thêm một tầng; downlink là con trỏ từ trang cha xuống trang con[^pg-btree-impl]. Cây cao lên từ gốc nên mọi lá vẫn ở cùng độ sâu.
 
-**Đọc đúng khi trang đang bị tách.** Mã nguồn B-tree của PostgreSQL cài đặt thuật toán của Lehman và Yao (1981). Mỗi trang có thêm right-link trỏ sang trang bên phải và một high key là cận trên của các khóa trên trang. Nếu lượt tìm tới một trang và thấy khóa cần tìm lớn hơn high key, trang đó vừa bị tách đồng thời, và lượt tìm đi theo right-link sang phải[^pg-nbtree-readme]. Nhờ vậy, khi đi xuống các tầng trên, lượt quét không phải giữ khóa trên trang nào[^pg-nbtree-readme].
+**Đọc đúng khi trang đang bị tách.** Mã nguồn B-tree của PostgreSQL cài đặt thuật toán của Lehman và Yao (1981). Mỗi trang có thêm right-link trỏ sang trang bên phải và một high key là cận trên của các khóa trên trang. Nếu lượt tìm tới một trang và thấy khóa cần tìm lớn hơn high key, trang đó vừa bị tách đồng thời, và lượt tìm đi theo right-link sang phải[^pg-nbtree-readme]. Nhờ vậy, khi đi xuống các tầng trên, lượt quét không phải giữ khóa trên trang trước khi sang trang sau; PostgreSQL chỉ khóa đọc ngắn trên trang đang xem[^pg-nbtree-readme].
 
-**Deduplication: khóa trùng chỉ lưu một lần.** PostgreSQL 16 gộp các tuple trùng khóa thành một posting list tuple: giá trị khóa xuất hiện một lần, theo sau là mảng TID đã sắp trỏ tới các dòng. Việc gộp diễn ra lười, khi một tuple mới không vừa trang lá, và được bật mặc định[^pg-btree-impl]. Lab tạo hai index trên cột `status` (chỉ 3 giá trị): có deduplication thì 6.904 kB (863 trang), tắt bằng `deduplicate_items = off` thì 30 MB (3.803 trang).
+**Deduplication: khóa trùng chỉ lưu một lần.** PostgreSQL 16 gộp các tuple trùng khóa thành một posting list tuple: giá trị khóa xuất hiện một lần, theo sau là mảng TID đã sắp trỏ tới các dòng. Việc gộp diễn ra lười, khi một tuple mới không vừa trang lá và việc xóa tuple không giải phóng đủ chỗ, và được bật mặc định[^pg-btree-impl]. Lab dựng hai index trên cột `status` (chỉ 3 giá trị) bằng `CREATE INDEX` trên bảng đã có dữ liệu, tức không đi qua đường chèn lười nói trên: có deduplication thì 6.904 kB (863 trang), tắt bằng `deduplicate_items = off` thì 30 MB (3.803 trang).
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 
 - **Hợp với:** tìm bằng, tìm theo khoảng, sắp xếp, `LIKE` theo tiền tố[^pg-index-types]. Cây nông: lab có 1 triệu khóa mà chỉ 3 tầng.
 - **Không hợp với:** `LIKE '%bar'`; `ILIKE` chỉ dùng được khi mẫu bắt đầu bằng ký tự không phải chữ cái[^pg-index-types]. Với các nhu cầu khác, PostgreSQL 16 có loại index khác: Hash chỉ cho so sánh bằng, GIN cho giá trị gồm nhiều thành phần như mảng, BRIN cho cột tương quan tốt với thứ tự vật lý của dòng[^pg-index-types].
-- **Locale ảnh hưởng tới `LIKE`.** Nếu database không dùng locale C chuẩn, index mặc định không phục vụ `LIKE` theo tiền tố; cần index với `text_pattern_ops` (hoặc `varchar_pattern_ops`, `bpchar_pattern_ops`), loại so sánh từng ký tự thay vì theo quy tắc collation. Index `text_pattern_ops` lại không phục vụ `<`, `<=`, `>`, `>=`, nên có khi cần cả hai index trên cùng cột[^pg-indexes-opclass]. Lab chạy với collation `C.UTF-8` (libc) và thấy đúng như vậy.
+- **Locale ảnh hưởng tới `LIKE`.** Nếu database không dùng locale C chuẩn, index mặc định không phục vụ `LIKE` theo tiền tố; cần index với `text_pattern_ops` (hoặc `varchar_pattern_ops`, `bpchar_pattern_ops`), loại so sánh từng ký tự thay vì theo quy tắc collation. Index `text_pattern_ops` lại không phục vụ `<`, `<=`, `>`, `>=`, nên có khi cần cả hai index trên cùng cột[^pg-indexes-opclass]. Lab chạy trên database có `datcollate` là `C.UTF-8`, không phải locale C chuẩn (`C`), và thấy đúng như vậy.
 - **Giá khi ghi.** Chèn có thể làm tách trang[^pg-btree-impl]. Trên PostgreSQL 16, với `UPDATE` không áp dụng được tối ưu HOT, đổi chỉ một cột thuộc một index cũng cần tuple mới cho mọi index của bảng[^pg-btree-impl]. PostgreSQL có bottom-up deletion để dọn các phiên bản cũ dồn lại trước khi chúng làm tách trang[^pg-btree-impl].
 - **Deduplication có giá nhỏ.** Workload ghi nhiều mà ít giá trị trùng chịu một chi phí nhỏ cố định; dù vậy tài liệu cho biết tắt deduplication thường không có ích. Index `INCLUDE` và các kiểu như `numeric`, `jsonb`, `float4`, `float8` không dùng được deduplication[^pg-btree-impl].
 
 ## Lỗi thường gặp và dấu hiệu nhận biết
 
-- **Mong B-tree phục vụ `LIKE '%abc'`.** Mẫu không neo đầu chuỗi thì B-tree không giúp được[^pg-index-types]. Dấu hiệu: `Seq Scan` với `Filter: (title ~~ '%abc'::text)` dù cột đã có index.
+- **Mong B-tree phục vụ `LIKE '%abc'`.** Mẫu không neo đầu chuỗi thì B-tree không giúp được[^pg-index-types]. Dấu hiệu: kế hoạch quét cả bảng, với điều kiện `LIKE` nằm ở `Filter`, dù cột đã có index.
 - **Có index mà `LIKE 'abc%'` vẫn quét cả bảng.** Thường do database không dùng locale C[^pg-indexes-opclass]. Dấu hiệu (lab bước 5): `Parallel Seq Scan` với `Filter: (title ~~ ...)`, trong khi `title = ...` thì dùng index. Kiểm tra `datcollate` trong `pg_database`, rồi tạo index `text_pattern_ops`; kế hoạch chuyển thành `Index Scan` với điều kiện `~>=~` và `~<~`.
-- **Thay index mặc định bằng index `text_pattern_ops`.** Dấu hiệu: `LIKE` nhanh lên nhưng truy vấn `where title > ...` hoặc `order by title` lại quét cả bảng hoặc phải sắp xếp[^pg-indexes-opclass].
+- **Thay index mặc định bằng index `text_pattern_ops`.** Dấu hiệu: `LIKE` nhanh lên nhưng truy vấn `where title > ...` lại quét cả bảng[^pg-indexes-opclass].
 - **Tắt deduplication không có lý do.** Dấu hiệu: index trên cột ít giá trị phình ra nhiều lần; lab: 30 MB so với 6.904 kB.
 - **Đọc sai số mục khi soi trang bằng `pageinspect`.** Mục đầu tiên trên trang không ngoài cùng bên phải là high key, không trỏ tới dòng nào[^pg-pageinspect]. Dấu hiệu: tổng số mục ở tầng lá lớn hơn số dòng của bảng một chút.
 

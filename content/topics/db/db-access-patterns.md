@@ -2,7 +2,7 @@
 id: db-access-patterns
 title: Mô hình truy vấn và thiết kế dữ liệu
 parent: db-storage
-summary: Thiết kế dữ liệu bắt đầu từ các truy vấn ứng dụng cần chạy.
+summary: Các truy vấn ứng dụng cần chạy quyết định schema ở NoSQL và quyết định index ở database quan hệ.
 contentStatus: draft
 volatility: slow
 prerequisites:
@@ -16,7 +16,7 @@ sources:
   - id: ddb-nosql-design
     url: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-general-nosql-design.html
     title: "Amazon DynamoDB Developer Guide — NoSQL design for DynamoDB"
-    supports: "Với RDBMS, dữ liệu truy vấn được linh hoạt nhưng truy vấn tương đối tốn kém và không mở rộng tốt khi lưu lượng cao; với NoSQL như DynamoDB, dữ liệu truy vấn hiệu quả theo một số ít cách, ngoài các cách đó truy vấn có thể tốn kém và chậm; trong DynamoDB, bạn thiết kế schema riêng để truy vấn phổ biến và quan trọng nhất nhanh và rẻ nhất có thể; không nên bắt đầu thiết kế schema cho DynamoDB cho tới khi biết các câu hỏi nó phải trả lời, hiểu bài toán nghiệp vụ và use case của ứng dụng từ đầu là thiết yếu; ba đặc điểm: kích thước dữ liệu, hình dạng dữ liệu (NoSQL tổ chức dữ liệu sao cho hình dạng trong database tương ứng với thứ sẽ được truy vấn, thay vì định hình lại lúc truy vấn như RDBMS), tốc độ dữ liệu; giữ dữ liệu liên quan ở cùng chỗ; giữ ít bảng nhất có thể; dùng thứ tự sắp xếp của khóa để nhóm các item liên quan."
+    supports: "Với RDBMS, dữ liệu truy vấn được linh hoạt nhưng truy vấn tương đối tốn kém và không mở rộng tốt khi lưu lượng cao; với RDBMS có thể tạo mô hình đã chuẩn hóa mà chưa nghĩ tới access pattern rồi mở rộng sau khi có câu hỏi mới; với NoSQL như DynamoDB, dữ liệu truy vấn hiệu quả theo một số ít cách, ngoài các cách đó truy vấn có thể tốn kém và chậm; trong DynamoDB, bạn thiết kế schema riêng để truy vấn phổ biến và quan trọng nhất nhanh và rẻ nhất có thể; không nên bắt đầu thiết kế schema cho DynamoDB cho tới khi biết các câu hỏi nó phải trả lời, hiểu bài toán nghiệp vụ và use case của ứng dụng từ đầu là thiết yếu; ba đặc điểm: kích thước dữ liệu, hình dạng dữ liệu (NoSQL tổ chức dữ liệu sao cho hình dạng trong database tương ứng với thứ sẽ được truy vấn, thay vì định hình lại lúc truy vấn như RDBMS), tốc độ dữ liệu; giữ dữ liệu liên quan ở cùng chỗ; giữ ít bảng nhất có thể; dùng thứ tự sắp xếp của khóa để nhóm các item liên quan."
     product: Amazon DynamoDB
     version: Developer Guide bản hiện hành
     checkedAt: 2026-10-16
@@ -81,7 +81,7 @@ examples:
     kind: lab-run
     title: "Cùng một truy vấn với nhiều cách đánh index: index ghép, covering index, partial index trên PostgreSQL 16.15"
     path: lab/experiments/db-access-patterns
-    checkedAt: 2026-10-16
+    checkedAt: 2026-11-02
   - id: ddb-order-entry
     kind: official-doc
     title: "Tài liệu AWS: mô hình hóa schema nhập đơn hàng trên DynamoDB từ 15 access pattern"
@@ -90,19 +90,21 @@ examples:
 changelog:
   - date: 2026-10-16
     note: "Claude soạn bài từ tài liệu PostgreSQL 16, Amazon DynamoDB Developer Guide, MongoDB Manual 9.0 và chạy thử nghiệm trên PostgreSQL 16.15 với 1 triệu dòng."
+  - date: 2026-11-02
+    note: "Phản biện vòng 1: giới hạn nhận định về NoSQL và việc chọn index, thêm vế RDBMS của nguồn; đổi summary cho khớp; bỏ các nhãn màn hình và danh sách còn lại, kể cả trong lab; chạy lại lab trong Docker, số trang và kế hoạch không đổi; ghi MongoDB 9.0."
 ---
 
 ## Vấn đề cần giải quyết
 
 Lab ở mục Ví dụ cần 20 yêu cầu mới nhất của một người gửi, trong bảng 1 triệu yêu cầu. Lab thử ba cách đánh index cho đúng truy vấn đó: index trên `created_at` đọc 1.621 trang, index trên `requester_id` đọc 203 trang, index ghép `(requester_id, created_at)` đọc 23 trang. Cả ba đều "có index", nhưng chỉ cách thứ ba khớp với cách truy vấn hỏi dữ liệu.
 
-Thiết kế dữ liệu và index mà chưa biết ứng dụng sẽ hỏi gì là đoán. Tài liệu Amazon DynamoDB nói thẳng: không nên bắt đầu thiết kế schema cho tới khi biết các câu hỏi nó phải trả lời[^ddb-nosql-design].
+Chọn index mà chưa biết ứng dụng sẽ hỏi gì là đoán. Với NoSQL, điều đó áp dụng cho cả schema: tài liệu Amazon DynamoDB nói không nên bắt đầu thiết kế schema cho DynamoDB tới khi biết các câu hỏi nó phải trả lời[^ddb-nosql-design].
 
 ## Cơ chế và luồng hoạt động
 
 **Access pattern là gì.** Access pattern (mô hình truy vấn) là cách ứng dụng đọc và ghi dữ liệu: lọc theo gì, sắp theo gì, lấy cột nào, bao nhiêu dòng mỗi lần, bao thường xuyên. Tài liệu DynamoDB tách ra ba đặc điểm cần biết trước: kích thước dữ liệu, hình dạng dữ liệu và tốc độ dữ liệu (tải truy vấn lúc cao điểm)[^ddb-nosql-design].
 
-**Quan hệ và NoSQL dùng access pattern khác nhau.** Theo tài liệu DynamoDB, với RDBMS dữ liệu truy vấn được linh hoạt, nhưng truy vấn tương đối tốn kém và không mở rộng tốt khi lưu lượng cao. Với NoSQL như DynamoDB, dữ liệu chỉ truy vấn hiệu quả theo một số ít cách; ngoài các cách đó, truy vấn có thể tốn kém và chậm. Vì vậy trong DynamoDB, schema được thiết kế riêng để truy vấn phổ biến và quan trọng nhất nhanh và rẻ nhất[^ddb-nosql-design]. MongoDB cũng đặt nguyên tắc dữ liệu được truy cập cùng nhau nên được lưu cùng nhau, và cấu trúc mô hình dữ liệu theo access pattern của ứng dụng[^mongodb-data-modeling]. Với database quan hệ, bài này tập trung vào phần access pattern quyết định trực tiếp: cần index nào (cách thiết kế bảng nằm ở bài Chuẩn hóa). Phần còn lại làm rõ việc đó trên PostgreSQL 16.
+**Quan hệ và NoSQL dùng access pattern khác nhau.** Theo tài liệu DynamoDB, với RDBMS dữ liệu truy vấn được linh hoạt, nhưng truy vấn tương đối tốn kém và không mở rộng tốt khi lưu lượng cao. Với NoSQL như DynamoDB, dữ liệu chỉ truy vấn hiệu quả theo một số ít cách; ngoài các cách đó, truy vấn có thể tốn kém và chậm. Vì vậy điểm xuất phát khác nhau: với RDBMS có thể tạo mô hình đã chuẩn hóa mà chưa nghĩ tới access pattern, rồi mở rộng khi có câu hỏi mới; trong DynamoDB, schema được thiết kế riêng để truy vấn phổ biến và quan trọng nhất nhanh và rẻ nhất[^ddb-nosql-design]. MongoDB 9.0 cũng đặt nguyên tắc dữ liệu được truy cập cùng nhau nên được lưu cùng nhau, và cấu trúc mô hình dữ liệu theo access pattern của ứng dụng[^mongodb-data-modeling]. Với database quan hệ, bài này tập trung vào phần access pattern quyết định trực tiếp: cần index nào (cách thiết kế bảng nằm ở bài Chuẩn hóa). Phần còn lại làm rõ việc đó trên PostgreSQL 16.
 
 **Index ghép: thứ tự cột quyết định.** Index B-tree nhiều cột dùng được với điều kiện trên bất kỳ tập con cột nào, nhưng hiệu quả nhất khi có điều kiện trên các cột dẫn đầu. Quy tắc chính xác: điều kiện bằng trên các cột dẫn đầu, cộng điều kiện không bằng trên cột đầu tiên không có điều kiện bằng, giới hạn phần index phải quét. Điều kiện trên các cột bên phải được kiểm tra trong index nhưng không giảm phần phải quét[^pg-indexes-multicolumn].
 
@@ -125,7 +127,7 @@ Có một điều kiện ngầm: với mỗi mục tìm được, PostgreSQL xem
 - **Mỗi index là một khoản phí khi ghi.** Trong lab của bài Index, chèn 200.000 dòng vào bảng có 4 index chậm hơn từ 4,9 đến 6,5 lần tùy lượt so với bảng không có index. Vì vậy chỉ thêm index cho access pattern thật sự quan trọng.
 - **Index nhiều cột: dè dặt.** Tài liệu PostgreSQL 16 khuyên dùng index nhiều cột một cách dè dặt; đa số trường hợp index một cột là đủ, và index hơn ba cột khó có ích trừ khi cách dùng bảng rất rập khuôn[^pg-indexes-multicolumn].
 - **Covering index chỉ đáng khi bảng ít thay đổi.** Index-only scan chỉ có lợi khi phần đáng kể trang của bảng đã được đánh dấu all-visible. Cột payload nhân bản dữ liệu và làm index phình; tài liệu khuyên dè dặt, nhất là với cột rộng[^pg-index-only-scans].
-- **Partial index đòi hiểu planner.** Tạo partial index nghĩa là bạn biết ít nhất bằng planner khi nào index có lợi; trong đa số trường hợp lợi thế so với index thường là tối thiểu[^pg-indexes-partial]. Nó đáng dùng khi tập con nhỏ và hay được hỏi, như danh sách chờ duyệt trong lab.
+- **Partial index đòi hiểu planner.** Tạo partial index nghĩa là bạn biết ít nhất bằng planner khi nào index có lợi; trong đa số trường hợp lợi thế so với index thường là tối thiểu[^pg-indexes-partial]. Nó đáng dùng khi tập con nhỏ và hay được hỏi, như truy vấn yêu cầu `pending` trong lab.
 - **Thiết kế theo access pattern ở NoSQL có hai mặt.** Truy vấn đã tính trước thì nhanh và rẻ; truy vấn ngoài các cách đó có thể tốn kém và chậm[^ddb-nosql-design].
 
 ## Lỗi thường gặp và dấu hiệu nhận biết
@@ -136,7 +138,7 @@ Có một điều kiện ngầm: với mỗi mục tìm được, PostgreSQL xem
 - **Mong index-only scan ngay sau khi nạp dữ liệu lớn.** Dấu hiệu: `Heap Fetches` gần bằng số dòng trả về. Visibility map chưa đánh dấu trang; sau `VACUUM` (thủ công hoặc autovacuum) thì giảm (lab bước 5).
 - **Truyền điều kiện của partial index qua tham số.** Việc khớp predicate diễn ra lúc lập kế hoạch, nên tài liệu PostgreSQL 16 lưu ý điều kiện truyền qua tham số không dùng được partial index[^pg-indexes-partial]. Câu lệnh prepared có thể chạy bằng custom plan (lập riêng cho giá trị tham số của lần chạy) hoặc generic plan (giống nhau cho mọi lần chạy); mặc định, 5 lần chạy đầu dùng custom plan rồi PostgreSQL mới cân nhắc chuyển sang generic plan[^pg-prepare]. Lab bước 7: cùng câu `where status = $1` chạy với `'pending'`, custom plan dùng partial index, generic plan thì không. Dấu hiệu: `EXPLAIN EXECUTE` cho kế hoạch có `$1` và không có partial index[^pg-prepare]. Nếu truy vấn luôn hỏi `pending`, giữ giá trị cố định trong câu SQL.
 - **Tạo hàng loạt partial index không chồng lấn để thay partitioning.** Tài liệu gọi đây là ý tưởng tồi; một index thường trên `(category, data)` hầu như luôn tốt hơn, còn bảng quá lớn thì xem xét partitioning[^pg-indexes-partial].
-- **Thiết kế schema NoSQL trước khi biết câu hỏi.** Dấu hiệu: sau khi đưa vào dùng mới phát hiện truy vấn quan trọng phải quét cả bảng[^ddb-nosql-design].
+- **Thiết kế schema NoSQL trước khi biết câu hỏi.** Tài liệu DynamoDB khuyên không làm vậy[^ddb-nosql-design]. Dấu hiệu: sau khi đưa vào dùng mới phát hiện truy vấn quan trọng phải quét cả bảng.
 
 ## Ví dụ thực tế
 
