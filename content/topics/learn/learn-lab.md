@@ -102,6 +102,8 @@ changelog:
     note: "Phản biện vòng 1 nhóm tồn (chặng 3): bỏ ý về máy của Lam khỏi supports của nguồn Compose; gợi ý dùng PostgreSQL có sẵn nhắc cả PGDATABASE."
   - date: 2026-11-02
     note: "Nhóm tồn (chặng 4): dùng PostgreSQL có sẵn thì role phải là superuser."
+  - date: 2026-11-02
+    note: "Chặng 4 có thêm 3 lab nên đổi Cả 17 README thành Mọi README lab PostgreSQL."
 ---
 
 ## Vấn đề cần giải quyết
@@ -172,7 +174,7 @@ node experiments/db-mvcc/run.mjs
 ## Lỗi thường gặp và dấu hiệu nhận biết
 
 - **Lab chạy nhầm vào một PostgreSQL khác.** Dấu hiệu: dòng `Máy chủ:` không phải PostgreSQL 16, hoặc lỗi xác thực cho user `lab`. Lab mặc định dùng cổng 5433 để tránh PostgreSQL có sẵn ở 5432[^lab-readme]; nếu bạn đặt `PGPORT`, kiểm lại dòng `Máy chủ:` trước khi dùng kết quả.
-- **Dùng một PostgreSQL 16 có sẵn thay cho container mà quên đặt cổng.** Cả 17 README lab PostgreSQL cho phép dùng PostgreSQL 16 có sẵn thay cho container, và nhắc đặt `PGPORT` (cùng `PGUSER`, `PGPASSWORD`, `PGDATABASE` nếu khác `lab`) cho khớp. Harness mặc định cổng 5433[^lab-harness], nên với PostgreSQL ở cổng 5432 bạn phải đặt `PGPORT=5432`. Role đó phải là superuser, vì có lab tạo extension và tạo role[^lab-readme]. Dấu hiệu quên: khi không có gì nghe ở cổng đó, script in dòng tiêu đề rồi dừng với `AggregateError [ECONNREFUSED]` và không có dòng `Máy chủ:` (chạy thử lab MVCC với `PGPORT=5499` trên máy Lam, Windows 11, Node.js v25.2.1, ngày 29/10/2026; output nguyên văn lưu ở `docs/reviews/chang-01.md`). Đặt xong thì kiểm dòng `Máy chủ:`.
+- **Dùng một PostgreSQL 16 có sẵn thay cho container mà quên đặt cổng.** Mọi README lab PostgreSQL cho phép dùng PostgreSQL 16 có sẵn thay cho container, và nhắc đặt `PGPORT` (cùng `PGUSER`, `PGPASSWORD`, `PGDATABASE` nếu khác `lab`) cho khớp. Harness mặc định cổng 5433[^lab-harness], nên với PostgreSQL ở cổng 5432 bạn phải đặt `PGPORT=5432`. Role đó phải là superuser, vì có lab tạo extension và tạo role[^lab-readme]. Dấu hiệu quên: khi không có gì nghe ở cổng đó, script in dòng tiêu đề rồi dừng với `AggregateError [ECONNREFUSED]` và không có dòng `Máy chủ:` (chạy thử lab MVCC với `PGPORT=5499` trên máy Lam, Windows 11, Node.js v25.2.1, ngày 29/10/2026; output nguyên văn lưu ở `docs/reviews/chang-01.md`). Đặt xong thì kiểm dòng `Máy chủ:`.
 - **Đổi `POSTGRES_USER`, `POSTGRES_PASSWORD` hay `POSTGRES_DB` mà không thấy tác dụng.** Các biến này chỉ có tác dụng khi container khởi động với thư mục dữ liệu rỗng[^postgres-image]. Volume `pgdata` đã có dữ liệu thì database cũ được giữ nguyên.
 - **Mở cổng ra mọi giao diện mạng.** Nếu `ports` không ghi host IP, Docker gắn vào `0.0.0.0` và bỏ qua tường lửa của máy[^compose-services]. Với mật khẩu yếu như `lab`, máy khác trong mạng có thể kết nối vào. Dấu hiệu: dòng `ports` bắt đầu bằng số cổng, như `5433:5432`, thay vì bằng IP, như `127.0.0.1:5433:5432`. Lab ghi rõ `127.0.0.1`[^lab-compose].
 - **`LAB_PG_PORT` không đổi như mong muốn.** Biến môi trường của shell được ưu tiên hơn file `.env`[^compose-interpolation]. Dấu hiệu: bạn sửa `.env` mà cổng không đổi.

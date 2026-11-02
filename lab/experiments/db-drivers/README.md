@@ -15,18 +15,20 @@ node experiments/db-drivers/run.mjs
 
 **Kết luận từ kết quả dưới đây.**
 
-- Hai kết nối có hai `pg_backend_pid()` khác nhau (110 và 111), và `pg_stat_activity` có hai dòng `client backend`.
+- Hai kết nối có hai `pg_backend_pid()` khác nhau (170 và 171), và `pg_stat_activity` có hai dòng `client backend`.
 - Driver giữ `processID` và `secretKey` nhận lúc khởi động kết nối.
 - Không có tham số, chuỗi `select 1 as a; select 2 as b` chạy được và trả 2 bộ kết quả. Có tham số, cùng dạng chuỗi đó báo lỗi `42601: cannot insert multiple commands into a prepared statement`.
 - `int4`, `float8` thành `number`; `bool` thành `boolean`; `timestamptz` thành `Date`; `jsonb` thành object; `int[]` thành `Array`; `int8` và `numeric` thành `string`.
 - `9007199254740993` qua `Number()` thành `9007199254740992`; qua `BigInt()` giữ nguyên.
 - `numeric` `1.10` qua `Number()` thành `1.1`.
 - `timestamptz` có `.123456` giây, `Date` sau khi qua driver chỉ còn `.123`.
+- `Number('0.10') + Number('0.20')` cho `0.30000000000000004`; `0.10::numeric + 0.20::numeric` trên database cho `0.30`.
+- `count(*)` về dưới dạng chuỗi: `so_dong + 1` cho `"21"`.
 
 **Giới hạn của kết luận.**
 
 - Chỉ thử driver `pg` 8.16.3 ở chế độ mặc định (text); driver khác có thể đổi kiểu khác.
-- Lab không quan sát trực tiếp các message của giao thức; việc chuỗi có tham số đi qua giao thức extended là suy ra từ thông báo lỗi và tài liệu.
+- Lab không quan sát trực tiếp các message của giao thức; việc chuỗi có tham số đi qua giao thức extended đến từ mã nguồn `pg` 8.16.3 (`requiresPreparation` trong `lib/query.js`), output chỉ cho thấy thông báo lỗi tương ứng.
 - Số PID thay đổi theo từng lần chạy.
 
 ## Kết quả thật
@@ -38,37 +40,37 @@ Nguyên văn output của lần chạy (cũng lưu ở `output.txt`).
 Máy chủ: PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
 Isolation mặc định: read committed
 Client: Node.js v25.2.1, driver pg 8.16.3
-Thời điểm chạy: 2026-11-02T03:15:30.167Z
+Thời điểm chạy: 2026-11-02T03:34:09.529Z
 
 ## 1. Mỗi kết nối là một tiến trình backend riêng
-[A]    47ms  select pg_backend_pid() as pid
+[A]    46ms  select pg_backend_pid() as pid
    [A] →
    pid
    ---
-   110
+   170
    (1 dòng)
-[B]    49ms  select pg_backend_pid() as pid
+[B]    47ms  select pg_backend_pid() as pid
    [B] →
    pid
    ---
-   111
+   171
    (1 dòng)
-[A]    50ms  select application_name, backend_type, state from pg_stat_activity where application_name like 'lab-%' order by application_name
+[A]    48ms  select application_name, backend_type, state from pg_stat_activity where application_name like 'lab-%' order by application_name
    [A] →
    application_name | backend_type   | state 
    -----------------+----------------+-------
    lab-A            | client backend | active
    lab-B            | client backend | idle  
    (2 dòng)
--- Driver pg giữ process ID và secret key nhận ở lúc khởi động (BackendKeyData): processID = 110, có secretKey: true
+-- Driver pg giữ process ID và secret key nhận ở lúc khởi động (BackendKeyData): processID = 170, có secretKey: true
 
 ## 2. Không có tham số: giao thức simple nhận nhiều câu lệnh trong một chuỗi
 [A] select 1 as a; select 2 as b → 2 bộ kết quả: [[{"a":1}],[{"b":2}]]
 
 ## 3. Có tham số: giao thức extended chỉ nhận một câu lệnh
-[A]    52ms  select $1::int as a; select 2 as b   -- tham số: [1]
-[A]    54ms  LỖI 42601: cannot insert multiple commands into a prepared statement
-[A]    54ms  select $1::int as a   -- tham số: [1]
+[A]    51ms  select $1::int as a; select 2 as b   -- tham số: [1]
+[A]    52ms  LỖI 42601: cannot insert multiple commands into a prepared statement
+[A]    53ms  select $1::int as a   -- tham số: [1]
    [A] →
    a
    -
@@ -76,7 +78,7 @@ Thời điểm chạy: 2026-11-02T03:15:30.167Z
    (1 dòng)
 
 ## 4. Kiểu dữ liệu sau khi qua driver
-[A]    55ms  select 1::int4 as so_int4, 9007199254740993::int8 as so_int8, 1.10::numeric(10,2) as so_numeric, 0.1::float8 as so_float8, true as gia_tri_bool, timestamptz '2026-01-02 03:04:05.123456+07' as thoi_diem, jsonb '{"a":1}' as du_lieu_json, array[1,2]::int[] as mang, gen_random_uuid() is not null as co_uuid
+[A]    53ms  select 1::int4 as so_int4, 9007199254740993::int8 as so_int8, 1.10::numeric(10,2) as so_numeric, 0.1::float8 as so_float8, true as gia_tri_bool, timestamptz '2026-01-02 03:04:05.123456+07' as thoi_diem, jsonb '{"a":1}' as du_lieu_json, array[1,2]::int[] as mang, gen_random_uuid() is not null as co_uuid
    [A] →
    so_int4 | so_int8          | so_numeric | so_float8 | gia_tri_bool | thoi_diem                | du_lieu_json    | mang | co_uuid
    --------+------------------+------------+-----------+--------------+--------------------------+-----------------+------+--------
@@ -99,11 +101,29 @@ Thời điểm chạy: 2026-11-02T03:15:30.167Z
    numeric dạng chuỗi: 1.10; Number(chuỗi): 1.1
 
 ## 6. timestamptz có micro giây, Date của JavaScript chỉ giữ tới mili giây
-[A]    57ms  select timestamptz '2026-01-02 03:04:05.123456+07'::text as chuoi_goc
+[A]    55ms  select timestamptz '2026-01-02 03:04:05.123456+07'::text as chuoi_goc
    [A] →
    chuoi_goc                    
    -----------------------------
    2026-01-01 20:04:05.123456+00
    (1 dòng)
    Date sau khi qua driver: 2026-01-01T20:04:05.123Z
+
+## 7. Cộng tiền bằng Number và bằng numeric của database
+   Number('0.10') + Number('0.20') = 0.30000000000000004
+[A]    56ms  select 0.10::numeric + 0.20::numeric as tong
+   [A] →
+   tong
+   ----
+   0.30
+   (1 dòng)
+
+## 8. count(*) là int8 nên về dưới dạng chuỗi
+[A]    57ms  select count(*) as so_dong from generate_series(1, 2)
+   [A] →
+   so_dong
+   -------
+   2      
+   (1 dòng)
+   typeof = string; so_dong + 1 = "21"
 ```

@@ -1,5 +1,5 @@
 /**
- * Lệnh release: chạy lần lượt mọi bước kiểm tra; một bước lỗi thì dừng và không có bản để publish.
+ * Lệnh release: chạy lần lượt mọi bước kiểm tra; một bước lỗi thì dừng, in "Không publish" và thoát mã 1.
  * Thành công: dist/artifact.html sẵn sàng publish, và release.json ghi lại kết quả.
  * Publish lên claude.ai do Claude thực hiện bằng công cụ Artifact (không chạy được từ script).
  */

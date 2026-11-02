@@ -26,6 +26,7 @@ await A.q(`select pg_sleep(2)`);
 await A.q(`select 1 as cau_tiep_theo`);
 await A.q(`rollback`);
 await B.q(`select v from exp_to.t where id = 1`);
+await A.q(`show statement_timeout`);
 
 step('3. lock_timeout chỉ giới hạn thời gian chờ khóa');
 await A.q(`begin`);
@@ -67,6 +68,26 @@ await B.q(`select pg_cancel_backend(${pidE}) as da_gui_tin_hieu`);
 await sleep(200);
 await B.q(`select state, left(query, 30) as cau_lenh from pg_stat_activity where pid = ${pidE}`);
 await E.end().catch(() => {});
+
+step('7. connectionTimeoutMillis của pool: chờ lấy kết nối có giới hạn');
+const pool = new pg.Pool({ ...config, max: 1, connectionTimeoutMillis: 300, application_name: 'lab-pool' });
+const giu = await pool.connect();
+const t1 = Date.now();
+const kq2 = await pool.connect().then(() => 'lấy được', (e) => `lỗi: ${e.message}`);
+console.log(`[pool] lần lấy thứ hai sau ${Date.now() - t1 >= 300 && Date.now() - t1 < 1000 ? 'khoảng 300 ms' : Date.now() - t1 + ' ms'}: ${kq2}`);
+giu.release();
+
+step('8. Client mượn từ pool bị kết thúc khi đang giữ: lỗi không đi qua pool.on(error)');
+pool.on('error', (e) => console.log(`[pool] pool.on(error): ${e.message}`));
+const batLoi = new Promise((resolve) => process.once('uncaughtException', (e) => { console.log(`[tiến trình] uncaughtException: ${e.code ?? ''} ${e.message}`); resolve(); }));
+const muon = await pool.connect();
+await muon.query(`set idle_in_transaction_session_timeout = '300ms'`);
+await muon.query(`begin`);
+note('Client đang được mượn, chưa gắn client.on(error), nghỉ trong transaction.');
+await batLoi;
+muon.on('error', () => {});
+muon.release(true);
+await pool.end();
 
 await A.q(`drop schema exp_to cascade`, undefined, { quiet: true });
 await A.end();

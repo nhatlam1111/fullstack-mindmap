@@ -46,5 +46,13 @@ step('6. timestamptz có micro giây, Date của JavaScript chỉ giữ tới mi
 await A.q(`select timestamptz '2026-01-02 03:04:05.123456+07'::text as chuoi_goc`);
 console.log(`   Date sau khi qua driver: ${row.thoi_diem.toISOString()}`);
 
+step('7. Cộng tiền bằng Number và bằng numeric của database');
+console.log(`   Number('0.10') + Number('0.20') = ${Number('0.10') + Number('0.20')}`);
+await A.q(`select 0.10::numeric + 0.20::numeric as tong`);
+
+step('8. count(*) là int8 nên về dưới dạng chuỗi');
+const dem = await A.q(`select count(*) as so_dong from generate_series(1, 2)`);
+console.log(`   typeof = ${typeof dem.rows[0].so_dong}; so_dong + 1 = ${JSON.stringify(dem.rows[0].so_dong + 1)}`);
+
 await A.end();
 await B.end();

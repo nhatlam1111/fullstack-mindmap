@@ -1,7 +1,7 @@
 // ORM: dùng TypeORM trên PostgreSQL và in mọi câu SQL nó sinh ra cho từng thao tác.
 import { DataSource, EntitySchema } from 'typeorm';
 import { readFileSync } from 'node:fs';
-import { header, session, step, note, config } from '../../lib/harness.mjs';
+import { header, session, step, config } from '../../lib/harness.mjs';
 
 await header('ORM (TypeORM) trên PostgreSQL');
 console.log(`TypeORM: ${JSON.parse(readFileSync(new URL('../../node_modules/typeorm/package.json', import.meta.url))).version}`);
@@ -14,6 +14,8 @@ for (const sql of [
   `create table exp_orm.requests (id int primary key, title text not null, status text not null, requester_id int not null references exp_orm.users)`,
   `insert into exp_orm.users select g, 'Người ' || g from generate_series(1, 5) g`,
   `insert into exp_orm.requests select g, 'Yêu cầu ' || g, 'pending', 1 + g % 5 from generate_series(1, 5) g`,
+  `create table exp_orm.counters (id int primary key, a int8 not null, b int8 not null)`,
+  `insert into exp_orm.counters values (1, 9007199254740993, 9007199254740993)`,
 ]) await A.q(sql, undefined, { quiet: true });
 
 const User = new EntitySchema({
@@ -26,6 +28,11 @@ const Request = new EntitySchema({
   relations: { requester: { type: 'many-to-one', target: 'User', joinColumn: { name: 'requester_id' } } },
 });
 
+const Counter = new EntitySchema({
+  name: 'Counter', tableName: 'counters', schema: 'exp_orm',
+  columns: { id: { type: Number, primary: true }, a: { type: Number }, b: { type: 'bigint' } },
+});
+
 let sqlCount = 0;
 const logger = {
   logQuery: (q, p) => { sqlCount += 1; console.log(`   SQL ${sqlCount}: ${q.replace(/\s+/g, ' ')}${p?.length ? `  -- tham số: ${JSON.stringify(p)}` : ''}`); },
@@ -34,7 +41,7 @@ const logger = {
 };
 const db = new DataSource({
   type: 'postgres', host: config.host, port: config.port, username: config.user, password: config.password, database: config.database,
-  entities: [User, Request], synchronize: false, logging: true, logger,
+  entities: [User, Request, Counter], synchronize: false, logging: true, logger,
 });
 await db.initialize();
 const requests = db.getRepository('Request');
@@ -87,8 +94,24 @@ console.log(`   kết quả: ${JSON.stringify(g)}`);
 begin('10. Câu SQL viết tay qua ORM vẫn truyền tham số riêng');
 console.log(`   kết quả: ${JSON.stringify(await db.query('select name from exp_orm.users where id = $1', [1]))}`);
 
+begin('11. save() một mảng entity');
+const r11 = await requests.find({ order: { id: 'ASC' } });
+sqlCount = 0;
+for (const r of r11) r.status = 'rejected';
+await requests.save(r11);
+console.log(`   tổng số câu SQL của save(mảng 5 entity): ${sqlCount}`);
+
+begin('12. Đếm qua repository và QueryBuilder');
+const c1 = await requests.count();
+const c2 = await requests.createQueryBuilder('r').getCount();
+console.log(`   count(): typeof = ${typeof c1}, giá trị = ${c1}; getCount(): typeof = ${typeof c2}, giá trị = ${c2}`);
+
+begin('13. Cột int8 khai báo khác nhau trong entity');
+const c = await db.getRepository('Counter').findOneBy({ id: 1 });
+console.log(`   cột a (type: Number): typeof = ${typeof c.a}, giá trị = ${c.a}`);
+console.log(`   cột b (type: 'bigint'): typeof = ${typeof c.b}, giá trị = ${c.b}`);
+
 await db.destroy();
 await A.q(`drop schema exp_orm cascade`, undefined, { quiet: true });
-note(`Kết nối dùng chung driver pg qua pool của TypeORM. Số dòng users: 5, requests: 5.`);
 await A.end();
 void users;

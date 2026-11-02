@@ -19,12 +19,15 @@ node experiments/db-orm/run.mjs
 - Không khai báo `relations` thì `r.requester` là `undefined`, không có câu SQL nào được chạy thêm.
 - Vòng lặp gọi `findOne` kèm `relations` cho từng dòng: 11 câu SQL cho 5 dòng, vì mỗi `findOne` kèm `relations` sinh 2 câu (`SELECT DISTINCT` rồi `SELECT`).
 - `find` kèm `relations` trên cả danh sách: 1 câu có JOIN.
-- `relationLoadStrategy: 'query'`: 3 câu không JOIN giữa danh sách và người gửi trong câu đầu.
+- `relationLoadStrategy: 'query'`: 3 câu: danh sách, người gửi (có `INNER JOIN` với `requests`), và ánh xạ dòng với người gửi.
 - `save()` trên entity đã nạp, đổi một cột: 4 câu gồm `SELECT`, `START TRANSACTION`, `UPDATE` chỉ cột đã đổi, `COMMIT`.
 - `save()` khi không có gì đổi: 1 câu `SELECT`, không có `UPDATE`.
 - `update()`: 1 câu `UPDATE`.
-- `count(*)` qua QueryBuilder trả chuỗi (`"2"`), vì driver trả `int8` là chuỗi.
+- `count(*)` qua QueryBuilder với `getRawMany()` trả chuỗi (`"2"`), vì driver trả `int8` là chuỗi.
 - `db.query` với SQL viết tay truyền tham số riêng (`$1`).
+- `save()` một mảng 5 entity: 8 câu gồm 1 `SELECT`, `START TRANSACTION`, 5 `UPDATE`, `COMMIT`.
+- `repository.count()` và `getCount()` trả `number`.
+- Cột `int8` khai báo `type: Number` đọc ra `number` 9007199254740992 (bị làm tròn); khai báo `type: 'bigint'` giữ chuỗi 9007199254740993.
 
 **Giới hạn của kết luận.**
 
@@ -42,9 +45,9 @@ Nguyên văn output của lần chạy (cũng lưu ở `output.txt`).
 Máy chủ: PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
 Isolation mặc định: read committed
 Client: Node.js v25.2.1, driver pg 8.16.3
-Thời điểm chạy: 2026-11-02T03:15:07.742Z
+Thời điểm chạy: 2026-11-02T03:34:14.528Z
 TypeORM: 1.1.2
-[A]    49ms  NOTICE: schema "exp_orm" does not exist, skipping
+[A]    38ms  NOTICE: schema "exp_orm" does not exist, skipping
    SQL 1: SELECT version()
    SQL 2: SELECT * FROM current_schema()
 
@@ -104,8 +107,30 @@ TypeORM: 1.1.2
 ## 10. Câu SQL viết tay qua ORM vẫn truyền tham số riêng
    SQL 1: select name from exp_orm.users where id = $1  -- tham số: [1]
    kết quả: [{"name":"Người 1"}]
-[A]   190ms  NOTICE: drop cascades to 2 other objects
+
+## 11. save() một mảng entity
+   SQL 1: SELECT "Request"."id" AS "Request_id", "Request"."title" AS "Request_title", "Request"."status" AS "Request_status", "Request"."requester_id" AS "Request_requester_id" FROM "exp_orm"."requests" "Request" ORDER BY "Request"."id" ASC
+   SQL 1: SELECT "Request"."id" AS "Request_id", "Request"."title" AS "Request_title", "Request"."status" AS "Request_status", "Request"."requester_id" AS "Request_requester_id" FROM "exp_orm"."requests" "Request" WHERE "Request"."id" IN ($1, $2, $3, $4, $5)  -- tham số: [1,2,3,4,5]
+   SQL 2: START TRANSACTION
+   SQL 3: UPDATE "exp_orm"."requests" SET "status" = $1 WHERE "id" = $2  -- tham số: ["rejected",1]
+   SQL 4: UPDATE "exp_orm"."requests" SET "status" = $1 WHERE "id" = $2  -- tham số: ["rejected",2]
+   SQL 5: UPDATE "exp_orm"."requests" SET "status" = $1 WHERE "id" = $2  -- tham số: ["rejected",3]
+   SQL 6: UPDATE "exp_orm"."requests" SET "status" = $1 WHERE "id" = $2  -- tham số: ["rejected",4]
+   SQL 7: UPDATE "exp_orm"."requests" SET "status" = $1 WHERE "id" = $2  -- tham số: ["rejected",5]
+   SQL 8: COMMIT
+   tổng số câu SQL của save(mảng 5 entity): 8
+
+## 12. Đếm qua repository và QueryBuilder
+   SQL 1: SELECT COUNT(1) AS "cnt" FROM "exp_orm"."requests" "Request"
+   SQL 2: SELECT COUNT(1) AS "cnt" FROM "exp_orm"."requests" "r"
+   count(): typeof = number, giá trị = 5; getCount(): typeof = number, giá trị = 5
+
+## 13. Cột int8 khai báo khác nhau trong entity
+   SQL 1: SELECT "Counter"."id" AS "Counter_id", "Counter"."a" AS "Counter_a", "Counter"."b" AS "Counter_b" FROM "exp_orm"."counters" "Counter" WHERE (("Counter"."id" = $1)) LIMIT 1  -- tham số: [1]
+   cột a (type: Number): typeof = number, giá trị = 9007199254740992
+   cột b (type: 'bigint'): typeof = string, giá trị = 9007199254740993
+[A]   175ms  NOTICE: drop cascades to 3 other objects
    DETAIL: drop cascades to table exp_orm.users
 drop cascades to table exp_orm.requests
--- Kết nối dùng chung driver pg qua pool của TypeORM. Số dòng users: 5, requests: 5.
+drop cascades to table exp_orm.counters
 ```

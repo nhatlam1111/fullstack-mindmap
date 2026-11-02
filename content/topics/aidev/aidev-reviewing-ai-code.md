@@ -5,9 +5,9 @@ parent: aidev-review
 summary: Đọc diff do agent tạo với cùng tiêu chuẩn như code của người.
 contentStatus: draft
 volatility: fast
-prerequisites:
-  - ops-code-review
+prerequisites: []
 related:
+  - ops-code-review
   - aidev-failure-modes
   - aidev-tests-as-guardrails
   - aidev-writing-specs
@@ -15,7 +15,7 @@ sources:
   - id: gh-review-ai
     url: https://docs.github.com/en/copilot/tutorials/review-ai-generated-code
     title: "GitHub Docs — Review AI-generated code"
-    supports: "Luôn chạy test tự động và phân tích tĩnh trước; kiểm code có giải đúng vấn đề và theo quy ước không; không nhận code khó theo dõi hoặc sửa còn lâu hơn viết lại; kiểm package được gợi ý có tồn tại và còn được bảo trì không, cảnh giác package bịa ra; để ý API bịa ra, ràng buộc bị bỏ qua, logic sai; để ý test bị xóa hoặc bỏ qua thay vì được sửa; hoài nghi code trông đúng nhưng không khớp ý định; thay đổi phức tạp hoặc nhạy cảm cần đồng đội review."
+    supports: "Trang có tám mục. Luôn chạy test tự động và phân tích tĩnh trước; kiểm code có giải đúng vấn đề và theo quy ước không; không nhận code khó theo dõi hoặc sửa còn lâu hơn viết lại; kiểm package được gợi ý có tồn tại và còn được bảo trì không, cảnh giác package bịa ra và slopsquatting, một kiểu tấn công lý thuyết dùng package giả hoặc độc hại; để ý API bịa ra, ràng buộc bị bỏ qua, logic sai; để ý test bị xóa hoặc bỏ qua thay vì được sửa; hoài nghi code trông đúng nhưng không khớp ý định; thay đổi phức tạp hoặc nhạy cảm cần đồng đội review."
     product: GitHub Copilot
     version: "tài liệu bản hiện hành"
     checkedAt: 2026-11-02
@@ -25,19 +25,25 @@ sources:
     supports: "Điều quan trọng nhất là thiết kế tổng thể của thay đổi. Kiểm chức năng có đúng ý định không, độ phức tạp, test (người phải bảo đảm test hợp lệ, và test có thật sự fail khi code hỏng không), tên, comment, tài liệu. Đọc mọi dòng code được giao review; không hiểu thì hỏi lại. Nhìn ra ngoài diff, không nhận thay đổi làm giảm sức khỏe của hệ thống."
     product: Google Engineering Practices
     checkedAt: 2026-11-02
+  - id: google-small-cls
+    url: https://google.github.io/eng-practices/review/developer/small-cls.html
+    title: "Google Engineering Practices — Small CLs"
+    supports: "Thay đổi nhỏ được review nhanh hơn và kỹ hơn, ít có khả năng đưa lỗi vào hơn, dễ quay lui hơn."
+    product: Google Engineering Practices
+    checkedAt: 2026-11-02
   - id: perry-2023
     url: https://arxiv.org/abs/2211.03622
     title: "Perry, Srivastava, Kumar, Boneh — Do Users Write More Insecure Code with AI Assistants? (CCS 2023)"
-    supports: "Trong nghiên cứu người dùng, người tham gia có trợ lý AI dựa trên model codex-davinci-002 viết code kém an toàn hơn đáng kể so với người không có, và có xu hướng tin hơn rằng mình đã viết code an toàn."
+    supports: "Nghiên cứu người dùng với 47 người (33 nhóm có trợ lý AI dựa trên codex-davinci-002, 14 nhóm đối chứng), năm tác vụ liên quan bảo mật bằng Python, JavaScript và C. Nhóm có trợ lý viết lời giải kém an toàn hơn ở bốn trong năm tác vụ; tác vụ C cho kết quả lẫn lộn. Nhóm có trợ lý có xu hướng tin hơn rằng mình đã viết code an toàn. Giới hạn do tác giả nêu: người tham gia chủ yếu là sinh viên (66% đại học, 19% sau đại học), giao diện và độ trễ có thể ảnh hưởng, môi trường nhân tạo với giới hạn thời gian và không ảnh hưởng tới công việc thật."
     product: Nghiên cứu người dùng, CCS 2023
     version: "model codex-davinci-002"
     checkedAt: 2026-11-02
   - id: cc-best
     url: https://code.claude.com/docs/en/best-practices
-    title: "Claude Code Docs — Best practices"
+    title: "Claude Code Docs — Best practices for Claude Code"
     supports: "Claude dừng khi việc trông có vẻ xong. /code-review xem diff trong một subagent mới, chưa thấy cuộc trò chuyện, nên không bị lý luận đã tạo ra code ảnh hưởng. Hãy đòi bằng chứng: lệnh đã chạy và output của nó; câu 'mọi test đều pass' tự nó nói rất ít. Có thể viết prompt review đối chiếu diff với SPEC.md. Người review được yêu cầu tìm lỗi sẽ luôn tìm ra thứ gì đó; sửa mọi phát hiện thì thêm lớp trừu tượng và test cho trường hợp không thể xảy ra."
     product: Claude Code
-    version: "tài liệu bản hiện hành, máy Lam chạy 2.1.201"
+    version: "tài liệu bản hiện hành, đọc 02/11/2026"
     checkedAt: 2026-11-02
 examples:
   - id: perry-study
@@ -52,18 +58,20 @@ examples:
     checkedAt: 2026-11-02
 changelog:
   - date: 2026-11-02
-    note: "Claude soạn bài từ GitHub Docs, Google Engineering Practices, tài liệu Claude Code và phần tóm tắt của nghiên cứu Perry và cộng sự."
+    note: "Claude soạn bài từ GitHub Docs, Google Engineering Practices, tài liệu Claude Code và nghiên cứu Perry và cộng sự."
+  - date: 2026-11-02
+    note: "Phản biện vòng 1: đọc toàn văn nghiên cứu Perry và ghi cỡ mẫu, số tác vụ, giới hạn do tác giả nêu; tách suy luận của bài khỏi nguồn; ghi điều kiện và ngày đọc cho /code-review; thêm nguồn Small CLs và slopsquatting; chuyển ops-code-review từ prerequisites sang related."
 ---
 
 ## Vấn đề cần giải quyết
 
-Coding agent viết code nhanh hơn người đọc. Diff lớn, trông gọn gàng, comment đầy đủ, nên rất dễ lướt qua và bấm merge. Nhưng người merge vẫn chịu trách nhiệm cho code đó.
+Nhận xét của bài này: coding agent viết code nhanh hơn người đọc, diff thường lớn và trông gọn gàng, nên rất dễ lướt qua rồi bấm merge. Nhưng người merge vẫn chịu trách nhiệm cho code đó.
 
-Cảm giác "trông đúng" là cái bẫy chính. Một nghiên cứu người dùng công bố tại CCS 2023 cho thấy người tham gia có trợ lý AI viết code kém an toàn hơn đáng kể, đồng thời tin hơn rằng mình đã viết code an toàn[^perry-2023]. GitHub cũng khuyên hoài nghi những đoạn code trông đúng nhưng không khớp với ý định[^gh-review-ai].
+GitHub khuyên hoài nghi những đoạn code trông đúng nhưng không khớp với ý định[^gh-review-ai]. Một nghiên cứu người dùng công bố tại CCS 2023 đo một hiện tượng gần với cảnh báo đó: trong năm tác vụ liên quan bảo mật, người tham gia có trợ lý AI viết lời giải kém an toàn hơn ở bốn tác vụ, đồng thời tin hơn rằng mình đã viết code an toàn[^perry-2023]. Nghiên cứu đo việc tự viết code cùng trợ lý, không đo việc review diff của agent; bài này chỉ rút ra rằng cảm giác "ổn rồi" không phải bằng chứng.
 
 ## Cơ chế và luồng hoạt động
 
-**Nguyên tắc: cùng tiêu chuẩn với code của người.** Những gì cần xem không đổi: thiết kế tổng thể, chức năng có đúng ý định không, độ phức tạp, test, tên, tài liệu; đọc mọi dòng được giao; không hiểu thì hỏi lại; và nhìn ra ngoài diff[^google-review]. Bài Code review (chặng 18) nói kỹ phần này. Bài này chỉ thêm những gì riêng với code do agent sinh.
+**Nguyên tắc: cùng tiêu chuẩn với code của người.** Những gì cần xem không đổi: thiết kế tổng thể, chức năng có đúng ý định không, độ phức tạp, test, tên, tài liệu; đọc mọi dòng được giao; không hiểu thì hỏi lại; và nhìn ra ngoài diff[^google-review]. Bài Code review ở chặng 18 sẽ nói kỹ phần này. Bài này chỉ thêm những gì riêng với code do agent sinh.
 
 **Thứ tự review đề xuất** (bài này ghép từ GitHub Docs và tài liệu Claude Code):
 
@@ -74,7 +82,7 @@ Cảm giác "trông đúng" là cái bẫy chính. Một nghiên cứu người 
 5. **Tìm lỗi đặc trưng của AI.** API bịa ra, ràng buộc bị bỏ qua, logic sai[^gh-review-ai].
 6. **Đọc mọi dòng còn lại**, như với diff của đồng nghiệp[^google-review].
 
-**Người review không viết code thì nhìn tốt hơn.** Tài liệu Claude Code mô tả `/code-review` xem diff trong một subagent mới, chưa thấy cuộc trò chuyện, nên không bị lý luận đã tạo ra code ảnh hưởng[^cc-best]. Cách này hỗ trợ người review, không thay người review.
+**Người không viết code thì nhìn khách quan hơn.** Tài liệu Claude Code (đọc ngày 02/11/2026) mô tả lệnh `/code-review` trong terminal: nó xem diff trong một subagent mới, chưa thấy cuộc trò chuyện, nên không bị lý luận đã tạo ra code ảnh hưởng[^cc-best]. Cách này hỗ trợ người review, không thay người review.
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 
@@ -82,19 +90,19 @@ Cảm giác "trông đúng" là cái bẫy chính. Một nghiên cứu người 
 
 **Đánh đổi.**
 
-- **Tốn thời gian đọc.** Agent càng nhanh thì phần đọc càng chiếm nhiều thời gian. Giữ thay đổi nhỏ là cách rẻ nhất để review được.
+- **Tốn thời gian đọc.** Agent càng nhanh thì phần đọc càng chiếm nhiều thời gian. Giao từng thay đổi nhỏ giúp ích: thay đổi nhỏ được review nhanh hơn, kỹ hơn và ít có khả năng đưa lỗi vào hơn[^google-small-cls].
 - **Review bằng agent có giới hạn.** Người review được yêu cầu tìm lỗi sẽ luôn tìm ra thứ gì đó. Sửa mọi phát hiện thì sinh ra thêm lớp trừu tượng và test cho trường hợp không thể xảy ra[^cc-best]. Bạn vẫn phải chọn phát hiện nào đáng sửa.
 - **Khi nào viết lại thay vì sửa.** GitHub khuyên không nhận code khó theo dõi, hoặc code mà sửa còn lâu hơn viết lại[^gh-review-ai].
 
 **Khi nào cần thêm người.** Thay đổi phức tạp hoặc nhạy cảm nên có đồng đội review[^gh-review-ai].
 
-**Giới hạn của bằng chứng.** Nghiên cứu Perry và cộng sự dùng model `codex-davinci-002`, một thế hệ model cũ[^perry-2023]. Không nên coi kết quả đó là mô tả chính xác cho công cụ hiện nay. Điều vẫn dùng được là cảnh báo về sự tự tin: có công cụ hỗ trợ không làm bạn bớt phải kiểm tra.
+**Giới hạn của bằng chứng.** Nghiên cứu Perry và cộng sự có 47 người, chủ yếu là sinh viên (66% đại học, 19% sau đại học), làm trong môi trường nhân tạo có giới hạn thời gian; chính tác giả ghi rằng họ khó đại diện cho lập trình viên chuyên nghiệp. Nghiên cứu dùng model `codex-davinci-002`, một thế hệ model cũ[^perry-2023]. Vì vậy không nên coi kết quả đó là mô tả chính xác cho công cụ hiện nay. Điều vẫn dùng được là cảnh báo về sự tự tin.
 
 ## Lỗi thường gặp và dấu hiệu nhận biết
 
 - **Tin câu "đã xong, test pass".** Agent dừng khi việc trông có vẻ xong[^cc-best]. Dấu hiệu: không có lệnh và output kèm theo. Hãy đòi output, hoặc tự chạy.
-- **Bỏ qua test bị sửa.** Dấu hiệu: diff có `.skip`, test bị xóa, hoặc giá trị mong đợi bị đổi cho khớp code mới[^gh-review-ai].
-- **Nhận package lạ.** Dấu hiệu: `package.json` có dependency bạn chưa từng nghe, ít lượt tải, hoặc tên gần giống một package nổi tiếng. Package có thể không tồn tại thật[^gh-review-ai].
+- **Bỏ qua test bị sửa.** GitHub khuyên để ý test bị xóa hoặc bỏ qua[^gh-review-ai]. Dấu hiệu: diff có `.skip`, có test biến mất. Bài này thêm một dấu hiệu nữa: giá trị mong đợi bị đổi cho khớp code mới.
+- **Nhận package lạ.** Package được gợi ý có thể không tồn tại thật, và GitHub còn nêu slopsquatting, một kiểu tấn công lý thuyết dùng package giả hoặc độc hại[^gh-review-ai]. Dấu hiệu: `package.json` có dependency bạn chưa từng nghe, hoặc tên gần giống một package nổi tiếng.
 - **Tin một API có vẻ hợp lý.** Dấu hiệu: một hàm hay tùy chọn cấu hình bạn không tìm thấy trong tài liệu của đúng phiên bản đang dùng[^gh-review-ai].
 - **Chỉ đọc code mới, không đọc ngữ cảnh.** Dấu hiệu: code đúng nếu xét riêng, nhưng trùng một helper đã có, hoặc phá quy ước của module. Google khuyên nhìn ra ngoài diff[^google-review].
 - **Merge code bạn không giải thích được.** Dấu hiệu: đồng nghiệp hỏi vì sao viết vậy và bạn phải hỏi lại agent.
@@ -102,8 +110,12 @@ Cảm giác "trông đúng" là cái bẫy chính. Một nghiên cứu người 
 
 ## Ví dụ thực tế
 
-- [ex:perry-study] — Perry, Srivastava, Kumar và Boneh, CCS 2023: trong nghiên cứu người dùng, nhóm có trợ lý AI dựa trên `codex-davinci-002` viết code kém an toàn hơn đáng kể so với nhóm không có, và tin hơn rằng code của mình an toàn[^perry-2023]. Phần tóm tắt không nêu con số cụ thể; bài này chỉ đọc phần tóm tắt.
-- [ex:gh-review-steps] — GitHub Docs liệt kê các bước review code do AI sinh: chạy kiểm tra tự động, kiểm ngữ cảnh và ý định, đánh giá chất lượng, soi dependency, tìm lỗi đặc trưng của AI, và review cùng đồng đội[^gh-review-ai].
+- [ex:perry-study] — Perry, Srivastava, Kumar và Boneh, CCS 2023[^perry-2023]:
+    - 47 người: 33 trong nhóm có trợ lý AI dựa trên `codex-davinci-002`, 14 trong nhóm đối chứng.
+    - Năm tác vụ liên quan bảo mật bằng Python, JavaScript và C.
+    - Nhóm có trợ lý viết lời giải kém an toàn hơn ở bốn trong năm tác vụ; tác vụ C cho kết quả lẫn lộn.
+    - Nhóm có trợ lý có xu hướng tin hơn rằng code của mình an toàn.
+- [ex:gh-review-steps] — GitHub Docs có tám mục về review code do AI sinh. Sáu mục đầu là chạy kiểm tra tự động, kiểm ngữ cảnh và ý định, đánh giá chất lượng, soi dependency, tìm lỗi đặc trưng của AI, và review cùng đồng đội[^gh-review-ai].
 
 ## Câu hỏi tự kiểm tra
 
@@ -111,6 +123,6 @@ Cảm giác "trông đúng" là cái bẫy chính. Một nghiên cứu người 
 - Diff của agent đổi `expect(total).toBe(100)` thành `expect(total).toBe(90)`. Bạn đọc điều này thế nào, và cần trả lời câu hỏi gì trước khi nhận?
 - Agent thêm một package bạn chưa từng nghe. Bạn kiểm tra những gì?
 - Vì sao một agent review trong session mới có thể thấy điều mà session viết code không thấy? Vì sao không nên sửa mọi thứ nó nêu ra?
-- Nghiên cứu Perry và cộng sự cho thấy điều gì về sự tự tin? Vì sao không nên áp nguyên kết quả đó cho công cụ hiện nay?
+- Nghiên cứu Perry và cộng sự cho thấy điều gì về sự tự tin? Nêu ba lý do không nên áp nguyên kết quả đó cho công cụ và lập trình viên hiện nay.
 
 ## Chủ đề liên quan và nguồn kiểm chứng
