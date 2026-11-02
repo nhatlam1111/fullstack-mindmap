@@ -73,6 +73,8 @@ changelog:
     note: "Phản biện vòng 1: Bloom filter chỉ có khi đặt filter policy, 10 bit là ví dụ cấu hình chứ không phải mặc định; thêm prefix Bloom filter; thêm vai trò của WAL; làm rõ level sâu hơn, sorted run, amplification, seek; sửa phạm vi câu về ghi dồn dập."
   - date: 2026-11-02
     note: "Phản biện vòng 2: không còn blocker hay major; 6 minor để lại cho nhóm tồn chặng 4 (ghi ở docs/reviews/chang-03.md); kiểm chứng."
+  - date: 2026-11-02
+    note: "Nhóm tồn (chặng 4): đưa định nghĩa Bloom filter lên trước, giải thích filter policy, chuyển chú thích seek lên lần đầu dùng."
 ---
 
 ## Vấn đề cần giải quyết
@@ -99,7 +101,7 @@ Phần dưới mô tả theo RocksDB, một storage engine LSM-tree. Wiki RocksD
 
 **Các level.** Với leveled compaction của RocksDB, các file ở L0 thường chồng lấn khoảng khóa. Mỗi level còn lại là một sorted run (một dãy khóa đã sắp, không chồng lấn), chia theo khoảng khóa vào nhiều file SST. Compaction tự động bắt đầu khi số file ở L0 đạt `level0_file_num_compaction_trigger`[^rocksdb-leveled]. Trong một level, tìm một khóa là tìm nhị phân trên khoảng khóa của các file để biết file nào có thể chứa nó[^rocksdb-leveled].
 
-**Đọc cần thêm trợ giúp.** Một khóa có thể có bản ở nhiều file (lab bước 3). Khi đặt filter policy, mỗi file SST mới có một Bloom filter; lab này không đặt. Bloom filter cho biết một khóa có thể có, hoặc chắc chắn không có, trong file; nhờ vậy giảm I/O và CPU khi đọc một khóa (`DB::Get`). Bloom filter theo nguyên khóa chỉ dùng cho tra cứu một khóa. Ví dụ cấu hình trong wiki dùng khoảng 10 bit mỗi khóa, và số bit chỉnh được[^rocksdb-bloom]. Quét theo khoảng thì phải tìm nhị phân trong từng sorted run rồi gộp kết quả bằng heap[^myrocks-pvldb]. Prefix Bloom filter giúp được một phần việc này: khi đặt `prefix_extractor`, hash của tiền tố khóa cũng vào filter, và có thể dùng lúc `Seek`[^rocksdb-bloom]. Facebook dùng nó cho các lượt quét có điều kiện bằng trên tiền tố của khóa, để bỏ qua sorted run không có khóa nào mang tiền tố đó[^myrocks-pvldb].
+**Đọc cần thêm trợ giúp.** Một khóa có thể có bản ở nhiều file (lab bước 3). Bloom filter cho biết một khóa có thể có, hoặc chắc chắn không có, trong một file; nhờ vậy giảm I/O và CPU khi đọc một khóa (`DB::Get`). Mỗi file SST mới chỉ có Bloom filter khi bạn đặt filter policy, tức cấu hình cách tạo filter; lab này không đặt. Bloom filter theo nguyên khóa chỉ dùng cho tra cứu một khóa. Ví dụ cấu hình trong wiki dùng khoảng 10 bit mỗi khóa, và số bit chỉnh được[^rocksdb-bloom]. Quét theo khoảng thì phải tìm nhị phân trong từng sorted run rồi gộp kết quả bằng heap[^myrocks-pvldb]. Prefix Bloom filter giúp được một phần việc này: khi đặt `prefix_extractor`, hash của tiền tố khóa cũng vào filter, và có thể dùng lúc `Seek` (tìm vị trí bắt đầu của một lượt quét)[^rocksdb-bloom]. Facebook dùng nó cho các lượt quét có điều kiện bằng trên tiền tố của khóa, để bỏ qua sorted run không có khóa nào mang tiền tố đó[^myrocks-pvldb].
 
 **Các kiểu compaction.** Trên RocksDB, leveled compaction giảm tối thiểu space amplification (dung lượng thực so với dữ liệu logic), đổi lại read amplification (đọc thêm bao nhiêu so với dữ liệu cần) và write amplification (ghi xuống đĩa bao nhiêu so với dữ liệu ứng dụng ghi) cao hơn. Tiered compaction (Universal) giảm tối thiểu write amplification, đổi lại read và space amplification cao hơn. FIFO compaction bỏ file cũ nhất khi hết hạn, dùng cho dữ liệu kiểu cache[^rocksdb-compaction][^rocksdb-overview].
 
@@ -107,7 +109,7 @@ Phần dưới mô tả theo RocksDB, một storage engine LSM-tree. Wiki RocksD
 
 - **Hợp khi ghi nhiều hơn đọc.** Theo bài báo gốc, LSM-tree có ích nhất khi chèn vào index phổ biến hơn tìm; các lượt tìm cần trả lời ngay sẽ mất hiệu quả I/O trong một số trường hợp[^oneil-lsm].
 - **Lợi về dung lượng và lượng ghi.** Facebook chọn LSM-tree (MyRocks) thay B-tree (InnoDB) để tiết kiệm chỗ, chấp nhận đọc chậm hơn. Kết quả họ công bố: kích thước instance giảm 62,3% với tập dữ liệu UDB, byte ghi xuống flash giảm 75%[^myrocks-pvldb].
-- **Đọc theo khoảng tốn hơn.** LSM-tree có chi phí seek (tìm vị trí bắt đầu của một lượt quét) cao hơn nhiều so với B-tree, và trên RocksDB duyệt ngược chậm hơn nhiều so với duyệt xuôi[^myrocks-pvldb].
+- **Đọc theo khoảng tốn hơn.** LSM-tree có chi phí seek cao hơn nhiều so với B-tree, và trên RocksDB duyệt ngược chậm hơn nhiều so với duyệt xuôi[^myrocks-pvldb].
 - **Xóa không giải phóng chỗ ngay.** Tombstone chiếm chỗ tới khi compaction bỏ đi[^myrocks-pvldb]; lab: xóa một nửa số khóa mà dung lượng tăng thêm 344.220 byte.
 - **Compaction tốn tài nguyên nền.** Compaction, nhất là khi do ghi dồn dập, có thể gây nghẽn[^myrocks-pvldb]. Chọn kiểu compaction là chọn giữa read, write và space amplification[^rocksdb-compaction].
 - **Cần bộ nhớ cho Bloom filter.** Hiệu năng LSM-tree cần Bloom filter được cache trong bộ nhớ[^myrocks-pvldb].

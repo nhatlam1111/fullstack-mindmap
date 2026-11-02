@@ -75,9 +75,11 @@ changelog:
   - date: 2026-10-29
     note: "Phản biện vòng 3: bỏ câu giải thích vCPU-giây, GiB-giây (mô tả sai một phần cách Azure tính) và câu trỏ tới bài cloud của chặng 19; đoạn đó trở về bản đã qua vòng 2, chỉ giữ giải thích free grant. Không còn blocker hay major; kiểm chứng."
   - date: 2026-10-29
-    note: "Nhóm tồn (chặng 3): giải thích vCPU-giây, GiB-giây theo bảng giá (tính theo tài nguyên được cấp cho replica, giá idle khi đã về số replica tối thiểu, 0 replica không tính phí); trỏ đúng từng bài cloud của chặng 19; thêm cloud-key-vault, cloud-iam-rbac vào related."
+    note: "Nhóm tồn (chặng 3): giải thích vCPU-giây, GiB-giây theo bảng giá (tính theo tài nguyên được cấp cho replica, giá idle, 0 replica không tính phí); trỏ đúng từng bài cloud của chặng 19; thêm cloud-key-vault, cloud-iam-rbac vào related."
   - date: 2026-10-29
     note: "Phản biện vòng 1 nhóm tồn (chặng 3): giá idle chỉ áp khi app đã về số replica tối thiểu, ghi rõ thế nào là replica không hoạt động; mức dùng thật quyết định active hay idle."
+  - date: 2026-11-02
+    note: "Nhóm tồn (chặng 4): giải thích replica ở lần đầu dùng; gắn nguồn cho hai câu về cách tính tiền và giá idle; sửa dòng changelog của nhóm tồn chặng 3."
 ---
 
 ## Vấn đề cần giải quyết
@@ -123,7 +125,7 @@ Cái khó đầu tiên là nguồn dữ liệu. Điều khoản Google (hiệu l
 
 **Hạ tầng**[^mm-practice-design]: repo công khai trên GitHub, CI/CD bằng GitHub Actions. API và web chạy trên Azure Container Apps, nhập hằng tuần bằng Container Apps job, database là PostgreSQL managed. SerpApi key nằm trong Key Vault, app đọc bằng managed identity. GitHub Actions đăng nhập Azure qua OIDC federation, không lưu secret của Azure trong GitHub.
 
-Container Apps gói Consumption có free grant, tức lượng dùng miễn phí mỗi tháng, tính trên mỗi subscription: 180.000 vCPU-giây, 360.000 GiB-giây và 2 triệu request (bảng giá đọc ngày 29/10/2026)[^aca-pricing]. vCPU-giây và GiB-giây tính theo số vCPU và GiB bộ nhớ được cấp (allocated) cho replica, nhân với số giây replica chạy; mức dùng thật quyết định replica tính giá active hay idle. Khi app đã thu về số replica tối thiểu, replica không hoạt động (không khởi động, không xử lý request, dùng không quá 0,01 vCPU và nhận không quá 1.000 byte mỗi giây) được tính giá idle thấp hơn. App thu về 0 replica thì không có phí sử dụng[^aca-pricing]. Managed identity và OIDC federation thuộc bài `cloud-managed-identity`, Key Vault thuộc bài `cloud-key-vault`, phân quyền thuộc bài `cloud-iam-rbac`; cả ba bài nằm ở chặng 19[^mm-roadmap].
+Container Apps gói Consumption có free grant, tức lượng dùng miễn phí mỗi tháng, tính trên mỗi subscription: 180.000 vCPU-giây, 360.000 GiB-giây và 2 triệu request (bảng giá đọc ngày 29/10/2026)[^aca-pricing]. vCPU-giây và GiB-giây tính theo số vCPU và GiB bộ nhớ được cấp (allocated) cho replica (một bản chạy của app), nhân với số giây replica chạy; mức dùng thật quyết định replica tính giá active hay idle[^aca-pricing]. Khi app đã thu về số replica tối thiểu, replica không hoạt động (không khởi động, không xử lý request, dùng không quá 0,01 vCPU và nhận không quá 1.000 byte mỗi giây) được tính giá idle thấp hơn[^aca-pricing]. App thu về 0 replica thì không có phí sử dụng[^aca-pricing]. Managed identity và OIDC federation thuộc bài `cloud-managed-identity`, Key Vault thuộc bài `cloud-key-vault`, phân quyền thuộc bài `cloud-iam-rbac`; cả ba bài nằm ở chặng 19[^mm-roadmap].
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 

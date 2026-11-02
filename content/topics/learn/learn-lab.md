@@ -16,7 +16,7 @@ sources:
   - id: lab-readme
     url: https://github.com/nhatlam1111/fullstack-mindmap/blob/main/lab/README.md
     title: "fullstack-mindmap — lab/README.md"
-    supports: "Mỗi thư mục experiments/<topic-id>/ là một thử nghiệm chạy thật gồm run.mjs, output.txt (output nguyên văn của lần chạy ghi trong README) và README.md (câu hỏi, môi trường, lệnh chạy lại, kết luận, giới hạn). Bài học trỏ tới thử nghiệm bằng examples với kind lab-run và path lab/experiments/<topic-id>. Kết nối mặc định localhost:5433, user lab, mật khẩu lab, database lab, đổi bằng PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE; lab cố ý không dùng 5432 để không chạy nhầm vào PostgreSQL có sẵn trên máy. Quy tắc: chỉ ghi kết quả thật, chạy lại thì thay cả output và kết luận; ghi rõ phiên bản database và nơi chạy; kết luận chỉ nói điều output cho thấy, điều không đo được ghi ở mục giới hạn."
+    supports: "Mỗi thư mục experiments/<topic-id>/ là một thử nghiệm chạy thật gồm run.mjs, output.txt (output nguyên văn của lần chạy ghi trong README) và README.md (câu hỏi, môi trường, lệnh chạy lại, kết luận, giới hạn). Bài học trỏ tới thử nghiệm bằng examples với kind lab-run và path lab/experiments/<topic-id>. Kết nối mặc định localhost:5433, user lab, mật khẩu lab, database lab, đổi bằng PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE; dùng PostgreSQL 16 có sẵn thì role kết nối phải là superuser vì có lab tạo extension và tạo role; lab cố ý không dùng 5432 để không chạy nhầm vào PostgreSQL có sẵn trên máy. Quy tắc: chỉ ghi kết quả thật, chạy lại thì thay cả output và kết luận; ghi rõ phiên bản database và nơi chạy; kết luận chỉ nói điều output cho thấy, điều không đo được ghi ở mục giới hạn."
     product: fullstack-mindmap
     version: "0.1.0"
     checkedAt: 2026-10-29
@@ -100,6 +100,8 @@ changelog:
     note: "Nhóm tồn (chặng 3): phiên bản Docker Compose ghi là kết quả lệnh trên máy, không gắn vào nguồn tài liệu; sửa supports của lab-harness; tiêu chí Đã hiểu ghi đủ ba vế; dấu hiệu ECONNREFUSED ghi thêm Windows 11 và nơi lưu output; câu về README khớp gợi ý PGPORT mới trong 17 README. Bổ sung cho dòng vòng 2: lần đó còn viết lại câu hỏi về phiên bản đầy đủ và ghi đủ 17 README."
   - date: 2026-10-29
     note: "Phản biện vòng 1 nhóm tồn (chặng 3): bỏ ý về máy của Lam khỏi supports của nguồn Compose; gợi ý dùng PostgreSQL có sẵn nhắc cả PGDATABASE."
+  - date: 2026-11-02
+    note: "Nhóm tồn (chặng 4): dùng PostgreSQL có sẵn thì role phải là superuser."
 ---
 
 ## Vấn đề cần giải quyết
@@ -170,7 +172,7 @@ node experiments/db-mvcc/run.mjs
 ## Lỗi thường gặp và dấu hiệu nhận biết
 
 - **Lab chạy nhầm vào một PostgreSQL khác.** Dấu hiệu: dòng `Máy chủ:` không phải PostgreSQL 16, hoặc lỗi xác thực cho user `lab`. Lab mặc định dùng cổng 5433 để tránh PostgreSQL có sẵn ở 5432[^lab-readme]; nếu bạn đặt `PGPORT`, kiểm lại dòng `Máy chủ:` trước khi dùng kết quả.
-- **Dùng một PostgreSQL 16 có sẵn thay cho container mà quên đặt cổng.** Cả 17 README lab PostgreSQL cho phép dùng PostgreSQL 16 có sẵn thay cho container, và nhắc đặt `PGPORT` (cùng `PGUSER`, `PGPASSWORD`, `PGDATABASE` nếu khác `lab`) cho khớp. Harness mặc định cổng 5433[^lab-harness], nên với PostgreSQL ở cổng 5432 bạn phải đặt `PGPORT=5432`. Dấu hiệu quên: khi không có gì nghe ở cổng đó, script in dòng tiêu đề rồi dừng với `AggregateError [ECONNREFUSED]` và không có dòng `Máy chủ:` (chạy thử lab MVCC với `PGPORT=5499` trên máy Lam, Windows 11, Node.js v25.2.1, ngày 29/10/2026; output nguyên văn lưu ở `docs/reviews/chang-01.md`). Đặt xong thì kiểm dòng `Máy chủ:`.
+- **Dùng một PostgreSQL 16 có sẵn thay cho container mà quên đặt cổng.** Cả 17 README lab PostgreSQL cho phép dùng PostgreSQL 16 có sẵn thay cho container, và nhắc đặt `PGPORT` (cùng `PGUSER`, `PGPASSWORD`, `PGDATABASE` nếu khác `lab`) cho khớp. Harness mặc định cổng 5433[^lab-harness], nên với PostgreSQL ở cổng 5432 bạn phải đặt `PGPORT=5432`. Role đó phải là superuser, vì có lab tạo extension và tạo role[^lab-readme]. Dấu hiệu quên: khi không có gì nghe ở cổng đó, script in dòng tiêu đề rồi dừng với `AggregateError [ECONNREFUSED]` và không có dòng `Máy chủ:` (chạy thử lab MVCC với `PGPORT=5499` trên máy Lam, Windows 11, Node.js v25.2.1, ngày 29/10/2026; output nguyên văn lưu ở `docs/reviews/chang-01.md`). Đặt xong thì kiểm dòng `Máy chủ:`.
 - **Đổi `POSTGRES_USER`, `POSTGRES_PASSWORD` hay `POSTGRES_DB` mà không thấy tác dụng.** Các biến này chỉ có tác dụng khi container khởi động với thư mục dữ liệu rỗng[^postgres-image]. Volume `pgdata` đã có dữ liệu thì database cũ được giữ nguyên.
 - **Mở cổng ra mọi giao diện mạng.** Nếu `ports` không ghi host IP, Docker gắn vào `0.0.0.0` và bỏ qua tường lửa của máy[^compose-services]. Với mật khẩu yếu như `lab`, máy khác trong mạng có thể kết nối vào. Dấu hiệu: dòng `ports` bắt đầu bằng số cổng, như `5433:5432`, thay vì bằng IP, như `127.0.0.1:5433:5432`. Lab ghi rõ `127.0.0.1`[^lab-compose].
 - **`LAB_PG_PORT` không đổi như mong muốn.** Biến môi trường của shell được ưu tiên hơn file `.env`[^compose-interpolation]. Dấu hiệu: bạn sửa `.env` mà cổng không đổi.

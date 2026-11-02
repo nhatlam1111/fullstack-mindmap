@@ -20,6 +20,8 @@ node experiments/db-isolation-levels/run.mjs
 
 Kết nối mặc định: `localhost:5433`, user `lab`, mật khẩu `lab`, database `lab`. Đổi bằng biến môi trường `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`; đổi cổng của container bằng `LAB_PG_PORT`.
 
+Dùng PostgreSQL 16 có sẵn thay cho container thì role kết nối phải là superuser: `db-btree` và `db-mvcc` tạo extension `pageinspect`, `pgstattuple`; `db-connection-pool` và `db-schema-data-model` tạo role `lab_app`, `lab_schema_user`.
+
 Lab cố ý không dùng cổng 5432, để một lần chạy thiếu cấu hình không vô tình kết nối vào PostgreSQL có sẵn trên máy (máy của Lam có PostgreSQL 17 ở cổng 5432). Mỗi lab PostgreSQL chạy qua `lib/harness.mjs` và in dòng `Máy chủ:` với phiên bản PostgreSQL ở đầu output; kiểm dòng đó trước khi dùng kết quả.
 
 ## Quy tắc

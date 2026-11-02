@@ -24,7 +24,7 @@ sources:
   - id: pg-planner-stats
     url: https://www.postgresql.org/docs/16/planner-stats.html
     title: "PostgreSQL 16 — 14.2. Statistics Used by the Planner"
-    supports: "Planner cần ước tính số dòng truy vấn trả về để chọn kế hoạch tốt; reltuples và relpages không cập nhật tức thì, được VACUUM, ANALYZE và vài lệnh DDL như CREATE INDEX cập nhật; pg_statistic do ANALYZE và VACUUM ANALYZE cập nhật, luôn là gần đúng; giới hạn số mục của most_common_vals và histogram_bounds đặt theo cột bằng ALTER TABLE SET STATISTICS hoặc toàn cục bằng default_statistics_target, mặc định 100, tăng lên có thể ước tính chính xác hơn nhưng tốn chỗ và thời gian; truy vấn chậm thường do các cột trong điều kiện tương quan, planner mặc định coi các điều kiện độc lập; CREATE STATISTICS tạo extended statistics, ANALYZE thu thập dữ liệu; với functional dependency, điều kiện trên cột phụ thuộc không thu hẹp thêm kết quả, và planner điều chỉnh ước tính để không đánh giá thấp."
+    supports: "Planner cần ước tính số dòng truy vấn trả về để chọn kế hoạch tốt; reltuples và relpages không cập nhật tức thì, được VACUUM, ANALYZE và vài lệnh DDL như CREATE INDEX cập nhật; pg_statistic do ANALYZE và VACUUM ANALYZE cập nhật, luôn là gần đúng; giới hạn số mục của most_common_vals và histogram_bounds đặt theo cột bằng ALTER TABLE SET STATISTICS hoặc toàn cục bằng default_statistics_target, mặc định 100, tăng lên có thể ước tính chính xác hơn nhưng tốn chỗ và thời gian; truy vấn chậm thường do các cột trong điều kiện tương quan, planner mặc định coi các điều kiện độc lập; CREATE STATISTICS tạo extended statistics, ANALYZE thu thập dữ liệu; với functional dependency, điều kiện trên cột phụ thuộc không thu hẹp thêm kết quả; ANALYZE đo mức phụ thuộc, và planner dùng hệ số đó để không đánh giá thấp, chỉ với điều kiện bằng so với hằng và IN."
     product: PostgreSQL
     version: "16"
     checkedAt: 2026-10-16
@@ -60,6 +60,8 @@ changelog:
     note: "Phản biện vòng 1: giải thích functional dependency; bỏ nhận định số trang ổn định hơn thời gian; dẫn node Gather của lab cho tổng số dòng."
   - date: 2026-11-02
     note: "Phản biện vòng 2: không còn blocker hay major; 6 minor để lại cho nhóm tồn chặng 4 (ghi ở docs/reviews/chang-03.md); kiểm chứng."
+  - date: 2026-11-02
+    note: "Nhóm tồn (chặng 4): câu về dependencies nói đúng mức của nguồn (đo mức phụ thuộc, dùng hệ số, chỉ với điều kiện bằng và IN)."
 ---
 
 ## Vấn đề cần giải quyết
@@ -74,7 +76,7 @@ SQL chỉ nói cần kết quả gì; database tự chọn cách lấy (xem bài
 
 **`EXPLAIN ANALYZE` chạy thật.** Nó thực sự chạy câu lệnh, rồi in số dòng và thời gian thực tế của từng node bên cạnh số ước tính. Khi một node chạy nhiều lần, `loops` là số lần chạy, còn thời gian và số dòng thực tế là trung bình mỗi lần[^pg-using-explain]. Thêm `BUFFERS` để biết phần nào đọc nhiều trang nhất[^pg-using-explain].
 
-**Số ước tính đến từ thống kê.** Planner cần ước tính số dòng để chọn kế hoạch[^pg-planner-stats]. Thống kê do `ANALYZE` và `VACUUM ANALYZE` thu thập và luôn là gần đúng[^pg-planner-stats]. Mặc định planner coi các điều kiện trong `WHERE` là độc lập với nhau; khi các cột tương quan, ước tính có thể sai, và `CREATE STATISTICS` cho phép thu thập thống kê trên nhiều cột. Với tùy chọn `dependencies`, planner biết giá trị một cột quyết định giá trị cột kia, nên điều kiện trên cột phụ thuộc không làm ước tính bị thu nhỏ thêm[^pg-planner-stats].
+**Số ước tính đến từ thống kê.** Planner cần ước tính số dòng để chọn kế hoạch[^pg-planner-stats]. Thống kê do `ANALYZE` và `VACUUM ANALYZE` thu thập và luôn là gần đúng[^pg-planner-stats]. Mặc định planner coi các điều kiện trong `WHERE` là độc lập với nhau; khi các cột tương quan, ước tính có thể sai, và `CREATE STATISTICS` cho phép thu thập thống kê trên nhiều cột[^pg-planner-stats]. Với tùy chọn `dependencies`, `ANALYZE` đo mức phụ thuộc giữa các cột; với điều kiện bằng so với hằng và `IN`, planner dùng hệ số đó để không ước tính thiếu[^pg-planner-stats].
 
 **Một node hay gặp: Bitmap Heap Scan.** Đây là kế hoạch hai bước. Node con đi qua index để tìm vị trí các dòng khớp; node trên sắp các vị trí đó theo thứ tự vật lý rồi mới đọc bảng, để giảm chi phí đọc rời rạc[^pg-using-explain].
 

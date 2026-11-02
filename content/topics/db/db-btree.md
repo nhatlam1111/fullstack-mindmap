@@ -69,6 +69,8 @@ changelog:
     note: "Phản biện vòng 1: sửa câu so số trang giữa các tầng cho khớp bảng số liệu; nêu số trang lab tính cả trang bảng; ghi đủ điều kiện deduplication; nói rõ C.UTF-8 không phải locale C chuẩn; bỏ các dấu hiệu chưa chạy trong lab hoặc không có trong nguồn."
   - date: 2026-11-02
     note: "Phản biện vòng 2: không còn blocker hay major; 6 minor để lại cho nhóm tồn chặng 4 (ghi ở docs/reviews/chang-03.md); kiểm chứng."
+  - date: 2026-11-02
+    note: "Nhóm tồn (chặng 4): giải thích vì sao 100 lần vào bảng chỉ tốn vài trang; nêu CREATE INDEX cũng áp dụng deduplication."
 ---
 
 ## Vấn đề cần giải quyết
@@ -93,7 +95,7 @@ Một triệu khóa chỉ cần ba tầng, và 99,60% số trang là trang lá. 
 
 **Tìm một khóa.** Lượt tìm đi từ gốc, ở mỗi tầng chọn nhánh có khoảng chứa khóa, xuống tới trang lá, rồi theo con trỏ sang bảng. Tài liệu Oracle nói tìm một giá trị trong index tốn n lần I/O, với n là chiều cao của B-tree[^ora-indexes]. Trong lab, tìm `id = 777777` đọc 4 trang, phù hợp với 3 trang index (một trang mỗi tầng) cộng 1 trang bảng.
 
-**Quét theo khoảng và theo thứ tự.** Trên PostgreSQL 16, mỗi tầng của cây dùng được như một danh sách liên kết đôi các trang[^pg-btree-impl]; Oracle cũng mô tả các leaf block liên kết đôi[^ora-indexes]. Vì vậy sau khi tìm tới đầu khoảng, lượt quét chỉ việc đi dọc các trang lá, xuôi hoặc ngược. Lab: lấy 100 `id` liên tiếp đọc 6 trang; `order by id desc limit 5` dùng `Index Only Scan Backward` và đọc 4 trang. Hai số này tính cả trang bảng, vì `Heap Fetches` là 100 và 5.
+**Quét theo khoảng và theo thứ tự.** Trên PostgreSQL 16, mỗi tầng của cây dùng được như một danh sách liên kết đôi các trang[^pg-btree-impl]; Oracle cũng mô tả các leaf block liên kết đôi[^ora-indexes]. Vì vậy sau khi tìm tới đầu khoảng, lượt quét chỉ việc đi dọc các trang lá, xuôi hoặc ngược. Lab: lấy 100 `id` liên tiếp đọc 6 trang; `order by id desc limit 5` dùng `Index Only Scan Backward` và đọc 4 trang. Hai số này tính cả trang bảng, vì `Heap Fetches` là 100 và 5. Vào bảng 100 lần mà chỉ tốn vài trang, vì các `id` liên tiếp nằm trên vài trang bảng liền nhau.
 
 **Các phép so sánh B-tree hỗ trợ.** Trên PostgreSQL 16, planner cân nhắc B-tree khi cột có index nằm trong so sánh `<`, `<=`, `=`, `>=`, `>`, và cả `BETWEEN`, `IN`, `IS NULL`, `IS NOT NULL`. `LIKE` dùng được nếu mẫu là hằng và neo ở đầu chuỗi (`col LIKE 'foo%'`), không dùng được với `col LIKE '%bar'`. B-tree cũng trả dữ liệu theo thứ tự đã sắp[^pg-index-types].
 
@@ -101,7 +103,7 @@ Một triệu khóa chỉ cần ba tầng, và 99,60% số trang là trang lá. 
 
 **Đọc đúng khi trang đang bị tách.** Mã nguồn B-tree của PostgreSQL cài đặt thuật toán của Lehman và Yao (1981). Mỗi trang có thêm right-link trỏ sang trang bên phải và một high key là cận trên của các khóa trên trang. Nếu lượt tìm tới một trang và thấy khóa cần tìm lớn hơn high key, trang đó vừa bị tách đồng thời, và lượt tìm đi theo right-link sang phải[^pg-nbtree-readme]. Nhờ vậy, khi đi xuống các tầng trên, lượt quét không phải giữ khóa trên trang trước khi sang trang sau; PostgreSQL chỉ khóa đọc ngắn trên trang đang xem[^pg-nbtree-readme].
 
-**Deduplication: khóa trùng chỉ lưu một lần.** PostgreSQL 16 gộp các tuple trùng khóa thành một posting list tuple: giá trị khóa xuất hiện một lần, theo sau là mảng TID đã sắp trỏ tới các dòng. Việc gộp diễn ra lười, khi một tuple mới không vừa trang lá và việc xóa tuple không giải phóng đủ chỗ, và được bật mặc định[^pg-btree-impl]. Lab dựng hai index trên cột `status` (chỉ 3 giá trị) bằng `CREATE INDEX` trên bảng đã có dữ liệu, tức không đi qua đường chèn lười nói trên: có deduplication thì 6.904 kB (863 trang), tắt bằng `deduplicate_items = off` thì 30 MB (3.803 trang).
+**Deduplication: khóa trùng chỉ lưu một lần.** PostgreSQL 16 gộp các tuple trùng khóa thành một posting list tuple: giá trị khóa xuất hiện một lần, theo sau là mảng TID đã sắp trỏ tới các dòng. Việc gộp diễn ra lười, khi một tuple mới không vừa trang lá và việc xóa tuple không giải phóng đủ chỗ, và được bật mặc định[^pg-btree-impl]. Lab dựng hai index trên cột `status` (chỉ 3 giá trị) bằng `CREATE INDEX` trên bảng đã có dữ liệu; `CREATE INDEX` cũng áp dụng deduplication, theo chiến lược hơi khác[^pg-btree-impl]: có deduplication thì 6.904 kB (863 trang), tắt bằng `deduplicate_items = off` thì 30 MB (3.803 trang).
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 

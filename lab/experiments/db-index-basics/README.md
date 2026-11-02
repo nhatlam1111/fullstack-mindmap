@@ -23,7 +23,7 @@ node experiments/db-index-basics/run.mjs
 
 **Giới hạn của kết luận.**
 
-- Thời gian là một lần đo (bước 4 là ba lần) trên máy build dùng chung; chỉ so sánh tương đối giữa các bước trong cùng lần chạy. Số trang (`Buffers`) ổn định hơn thời gian.
+- Thời gian là một lần đo (bước 4 là ba lần) trên máy build dùng chung; chỉ so sánh tương đối giữa các bước trong cùng lần chạy.
 - Bước 1 đã chạy truy vấn một lần trước để làm nóng cache, nhưng vẫn còn 554 trang phải đọc từ ngoài shared buffers.
 - Dữ liệu sinh xác định, không phải dữ liệu thật; phân bố khác (ví dụ một người gửi chiếm nửa bảng) sẽ cho kế hoạch khác.
 - Lệnh `select pg_stat_force_next_flush()` được gọi trước khi đọc `pg_stat_user_indexes` vì thống kê tích lũy không cập nhật tức thì.

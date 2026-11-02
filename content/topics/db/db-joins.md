@@ -60,6 +60,8 @@ changelog:
     note: "Phản biện: giới hạn câu ON/WHERE vào phép so sánh và nêu ngoại lệ IS NULL, thêm điều kiện geqo_threshold, đặt câu của Oracle về số dòng đúng ngữ cảnh nested loops, giải thích bảng được băm trong lab, thêm bước lab cho FROM T1, T2 và JOIN thiếu ON, dẫn lab Normalization cho đánh đổi."
   - date: 2026-10-15
     note: "Kiểm chứng: qua phản biện độc lập, đã xử lý mọi phát hiện; chuyển sang Đã kiểm chứng."
+  - date: 2026-11-02
+    note: "Nhóm tồn (chặng 4): liên kết về index trên cột join trỏ sang bài Index."
 ---
 
 ## Vấn đề cần giải quyết
@@ -94,7 +96,7 @@ Với nhiều hơn hai bảng, planner xét các thứ tự join khác nhau và 
 
 **Chọn kiểu join theo câu hỏi nghiệp vụ.** "Yêu cầu nào kèm người gửi" là inner join. "Mọi nhân viên, kể cả người chưa gửi yêu cầu" là left join từ bảng nhân viên. Chọn sai kiểu thì mất dòng hoặc thừa dòng NULL.
 
-**Thuật toán join là việc của database**, nhưng phụ thuộc vào thứ bạn cung cấp. Theo Oracle Release 26, nested loops hợp khi join các tập con nhỏ hoặc khi điều kiện join là cách truy cập hiệu quả bảng bên trong; hash join được cân nhắc khi phải join lượng dữ liệu tương đối lớn và điều kiện là phép bằng; sort merge có thể được chọn khi điều kiện join là bất đẳng thức[^ora-joins]. Trong lab PostgreSQL, cùng một join đổi từ hash join sang nested loop khi chỉ lấy một người dùng. PostgreSQL 16 ghi rằng nested loop có thể là chiến lược tốt khi bảng bên phải quét được bằng index[^pg-planner]; Oracle ghi rằng nested loops nói chung hợp nhất với bảng nhỏ có index trên điều kiện join[^ora-joins]. Vì vậy index trên cột dùng để join là một phần của thiết kế (xem bài Query plan và EXPLAIN).
+**Thuật toán join là việc của database**, nhưng phụ thuộc vào thứ bạn cung cấp. Theo Oracle Release 26, nested loops hợp khi join các tập con nhỏ hoặc khi điều kiện join là cách truy cập hiệu quả bảng bên trong; hash join được cân nhắc khi phải join lượng dữ liệu tương đối lớn và điều kiện là phép bằng; sort merge có thể được chọn khi điều kiện join là bất đẳng thức[^ora-joins]. Trong lab PostgreSQL, cùng một join đổi từ hash join sang nested loop khi chỉ lấy một người dùng. PostgreSQL 16 ghi rằng nested loop có thể là chiến lược tốt khi bảng bên phải quét được bằng index[^pg-planner]; Oracle ghi rằng nested loops nói chung hợp nhất với bảng nhỏ có index trên điều kiện join[^ora-joins]. Vì vậy index trên cột dùng để join là một phần của thiết kế (xem bài Index).
 
 **Đánh đổi của schema đã normalize** là phải join nhiều hơn: ở lab của bài Normalization, thiết kế đã tách cần hai join để lấy tên phòng ban của một yêu cầu. Đó là cái giá để mỗi sự thật nằm ở một chỗ.
 

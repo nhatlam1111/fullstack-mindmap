@@ -81,9 +81,11 @@ changelog:
   - date: 2026-10-29
     note: "Phản biện vòng 2 (chặng 1): không còn blocker hay major; giữ kiểm chứng, giữ verifiedAt cũ vì chỉ các đoạn đã đổi được phản biện."
   - date: 2026-10-29
-    note: "Nhóm tồn (chặng 3): tiêu đề ví dụ, mục Ví dụ, câu hỏi tự kiểm tra và dấu hiệu lỗi trên Oracle nói 'không có BEGIN' thay cho 'không có transaction'; mục Ví dụ ghi rõ mỗi lệnh là một transaction riêng; câu hỏi và kết luận trong README của lab đổi theo."
+    note: "Nhóm tồn (chặng 3): tiêu đề ví dụ, mục Ví dụ và câu hỏi tự kiểm tra nói 'không có BEGIN' thay cho 'không có transaction'."
   - date: 2026-10-29
-    note: "Phản biện vòng 1 nhóm tồn (chặng 3): 'mỗi lệnh là một transaction riêng' thay cho 'mỗi lệnh tự commit'; 'Có BEGIN' thay cho 'Có transaction' ở mục Ví dụ."
+    note: "Phản biện vòng 1 nhóm tồn (chặng 3): dấu hiệu lỗi trên Oracle cũng bỏ cách nói đó; mục Ví dụ ghi 'mỗi lệnh là một transaction riêng' và 'Có BEGIN'; câu hỏi và kết luận trong README của lab đổi theo."
+  - date: 2026-11-02
+    note: "Nhóm tồn (chặng 4): dấu hiệu lỗi trên Oracle so với bước một của lab trên PostgreSQL 16, không dùng chữ BEGIN cho Oracle; phân lại ý giữa hai dòng changelog trên."
 ---
 
 ## Vấn đề cần giải quyết
@@ -131,7 +133,7 @@ Hệ quả: giữ transaction ngắn, không chờ người dùng thao tác tron
 
 - **Chạy từng lệnh ở chế độ tự commit.** Trên PostgreSQL 16, không có `BEGIN` thì mỗi câu lệnh là một transaction riêng[^pg-tx-tutorial]. Dấu hiệu: có yêu cầu `approved` mà không có dòng lịch sử nào, như bước một của lab.
 - **Bắt lỗi rồi chạy tiếp trên PostgreSQL.** Code nuốt lỗi của một câu lệnh rồi gửi câu tiếp theo sẽ nhận `25P02`. Dấu hiệu: một lỗi ban đầu kéo theo hàng loạt lỗi "transaction is aborted". Cách sửa: rollback, hoặc đặt savepoint trước bước có thể lỗi và `ROLLBACK TO` savepoint đó[^pg-tx-tutorial].
-- **Commit sau lỗi trên Oracle.** Vì chỉ câu lệnh lỗi bị hoàn tác[^ora-transactions], dấu hiệu là dữ liệu nửa vời giống hệt khi chạy không có `BEGIN`.
+- **Commit sau lỗi trên Oracle.** Vì chỉ câu lệnh lỗi bị hoàn tác[^ora-transactions], dấu hiệu là dữ liệu nửa vời giống hệt bước một của lab trên PostgreSQL 16.
 - **Trộn DDL vào transaction trên Oracle.** Oracle (Release 26) chạy `COMMIT` ngầm trước và sau mỗi câu DDL như `CREATE`, `ALTER`, `DROP`[^ora-transactions]. Dấu hiệu: `ROLLBACK` sau một câu DDL không hoàn tác được các thay đổi dữ liệu trước nó.
 
 ## Ví dụ thực tế

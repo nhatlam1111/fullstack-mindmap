@@ -76,6 +76,8 @@ changelog:
     note: "Phản biện vòng 1: giải thích HOT, thêm nguồn; nêu index của PRIMARY KEY và UNIQUE còn giữ ràng buộc; bỏ nhận định số trang ổn định hơn thời gian."
   - date: 2026-11-02
     note: "Phản biện vòng 2: không còn blocker hay major; 6 minor để lại cho nhóm tồn chặng 4 (ghi ở docs/reviews/chang-03.md); kiểm chứng."
+  - date: 2026-11-02
+    note: "Nhóm tồn (chặng 4): sửa câu về thời gian đo cho khớp phần ba lượt chèn."
 ---
 
 ## Vấn đề cần giải quyết
@@ -130,7 +132,7 @@ Trong lab, sau khi tạo index trên `requester_id`, cùng truy vấn chỉ đ�
     - Tạo index trên `requester_id` mất 0,53 giây, index chiếm 6.728 kB. Sau đó: `Bitmap Index Scan` rồi `Bitmap Heap Scan`, đọc 203 trang, 0,410 ms.
     - Index trên `status`: lọc `pending` dùng index nhưng vẫn đọc cả 11.236 trang bảng, vì dòng pending rải khắp bảng; lọc `approved` thì planner quét tuần tự.
     - Chèn 200.000 dòng vào bảng có 4 index chậm hơn bảng không index từ 4,9 đến 6,5 lần tùy lượt, trong lần chạy này (bảng ở trên).
-    - Thời gian là một lần đo trên máy build dùng chung, nên bài dựa chủ yếu vào số trang.
+    - Thời gian là một lần đo (phần chèn là ba lượt) trên máy build dùng chung; phần đọc so bằng số trang, phần ghi chỉ so tương đối trong cùng lần chạy.
 
 ## Câu hỏi tự kiểm tra
 
