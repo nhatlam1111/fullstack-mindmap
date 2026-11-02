@@ -75,6 +75,8 @@ const giu = await pool.connect();
 const t1 = Date.now();
 const kq2 = await pool.connect().then(() => 'lấy được', (e) => `lỗi: ${e.message}`);
 console.log(`[pool] lần lấy thứ hai sau ${Date.now() - t1 >= 300 && Date.now() - t1 < 1000 ? 'khoảng 300 ms' : Date.now() - t1 + ' ms'}: ${kq2}`);
+const { rows } = await giu.query(`select 1 as van_chay`);
+console.log(`[pool] client đang giữ chạy tiếp được: ${JSON.stringify(rows[0])}`);
 giu.release();
 
 step('8. Client mượn từ pool bị kết thúc khi đang giữ: lỗi không đi qua pool.on(error)');
@@ -88,6 +90,24 @@ await batLoi;
 muon.on('error', () => {});
 muon.release(true);
 await pool.end();
+
+step('9. set local hết tác dụng khi transaction kết thúc; set thường giữ lại sau commit');
+await A.q(`begin`);
+await A.q(`set local statement_timeout = '300ms'`);
+await A.q(`show statement_timeout`);
+await A.q(`commit`);
+await A.q(`show statement_timeout`);
+note('set thường, rồi rollback.');
+await A.q(`begin`);
+await A.q(`set statement_timeout = '300ms'`);
+await A.q(`rollback`);
+await A.q(`show statement_timeout`);
+note('set thường, rồi commit.');
+await A.q(`begin`);
+await A.q(`set statement_timeout = '300ms'`);
+await A.q(`commit`);
+await A.q(`show statement_timeout`);
+await A.q(`reset statement_timeout`);
 
 await A.q(`drop schema exp_to cascade`, undefined, { quiet: true });
 await A.end();

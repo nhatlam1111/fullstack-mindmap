@@ -74,7 +74,7 @@ sources:
     title: "node-oracledb — Appendix A: Node-oracledb Thin and Thick Modes"
     supports: "node-oracledb mặc định chạy Thin mode, không cần thư viện Oracle Client; Thick mode bật khi gọi oracledb.initOracleClient() và dùng Oracle Client. Thin mode không hỗ trợ native network encryption hay checksumming và chỉ hỗ trợ homogeneous pool."
     product: node-oracledb
-    version: "tài liệu latest, đọc 02/11/2026, có ghi chú thay đổi tới 26.0.0"
+    version: "26.0.0 (tài liệu latest, đối chiếu 02/11/2026)"
     checkedAt: 2026-11-02
 examples:
   - id: lab-drivers
@@ -87,6 +87,8 @@ changelog:
     note: "Claude soạn bài từ tài liệu PostgreSQL 16, node-postgres, node-oracledb và chạy thử nghiệm trên PostgreSQL 16.15 trong Docker."
   - date: 2026-11-02
     note: "Phản biện vòng 1: giới hạn mở bài vào database client/server; dẫn mã nguồn pg cho việc dùng extended query khi có tham số; thêm số đo cộng tiền và count(*) vào lab; sửa cách nói về giới hạn của number, prepared statement; bổ sung điều kiện của nguồn."
+  - date: 2026-11-02
+    note: "Phản biện vòng 2: ghi node-oracledb 26.0.0."
 ---
 
 ## Vấn đề cần giải quyết
@@ -129,7 +131,7 @@ Trong driver `pg` 8.16.3, câu lệnh có mảng tham số đi qua giao thức e
 
 `int8` thành string vì `number` của JavaScript không giữ chính xác được mọi số nguyên 64 bit[^np-pg-types]. `number` chỉ an toàn tới `Number.MAX_SAFE_INTEGER`, tức 9007199254740991; số lớn hơn nên dùng `BigInt`[^mdn-max-safe].
 
-**Trên Oracle.** `node-oracledb` (tài liệu đọc ngày 02/11/2026) có hai chế độ. Thin mode là mặc định và không cần thư viện Oracle Client. Thick mode bật bằng `oracledb.initOracleClient()` và dùng thư viện đó. Thin mode có giới hạn riêng, ví dụ không hỗ trợ native network encryption hay checksumming[^oracledb-modes].
+**Trên Oracle.** `node-oracledb` 26.0.0 (tài liệu latest, đối chiếu 02/11/2026) có hai chế độ. Thin mode là mặc định và không cần thư viện Oracle Client. Thick mode bật bằng `oracledb.initOracleClient()` và dùng thư viện đó. Thin mode có giới hạn riêng, ví dụ không hỗ trợ native network encryption hay checksumming[^oracledb-modes].
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 

@@ -27,6 +27,13 @@ sources:
     product: PostgreSQL
     version: "16"
     checkedAt: 2026-11-02
+  - id: pg-set
+    url: https://www.postgresql.org/docs/16/sql-set.html
+    title: "PostgreSQL 16 — SET"
+    supports: "SET trong transaction bị hủy thì mất tác dụng khi rollback; sau khi transaction commit, tác dụng kéo dài tới hết session, trừ khi có SET khác ghi đè. SET LOCAL chỉ có tác dụng tới hết transaction hiện tại, dù commit hay không; sau COMMIT hoặc ROLLBACK, giá trị cấp session có hiệu lực trở lại."
+    product: PostgreSQL
+    version: "16"
+    checkedAt: 2026-11-02
   - id: pg-signal
     url: https://www.postgresql.org/docs/16/functions-admin.html
     title: "PostgreSQL 16 — 9.27. System Administration Functions"
@@ -73,6 +80,8 @@ changelog:
     note: "Claude soạn bài từ tài liệu PostgreSQL 16, node-postgres, Amazon Builders' Library và chạy thử nghiệm trên PostgreSQL 16.15 trong Docker."
   - date: 2026-11-02
     note: "Phản biện vòng 1: bỏ ý sai về pg_dump (pg_dump tự đặt statement_timeout = 0), ghi dấu hiệu migration là suy luận; thêm vào lab connectionTimeoutMillis, client mượn bị kết thúc, set local sau rollback; sửa phần xử lý lỗi với pool; nêu giới hạn của cách chọn timeout; thêm PostgreSQL 17; ghi khuyến nghị là của bài."
+  - date: 2026-11-02
+    note: "Phản biện vòng 2: thêm nguồn SET và lab bước 9 so set local với set sau commit; ghi pg-pool và Node.js; bước 7 chạy thêm một câu trên client đang giữ."
 ---
 
 ## Vấn đề cần giải quyết
@@ -97,7 +106,7 @@ Các loại timeout dừng những thứ khác nhau, ở những chỗ khác nha
 
 **`statement_timeout`.** Hủy mọi câu lệnh chạy quá thời gian đặt[^pg-client-config]. Lab đặt `300ms` rồi chạy `pg_sleep(2)`: câu lệnh bị hủy sau khoảng 300 ms với `57014: canceling statement due to statement timeout`, và câu `select` tiếp theo trên cùng kết nối vẫn chạy.
 
-Nếu đang ở trong transaction, câu lệnh bị hủy làm hỏng cả transaction. Lab: câu tiếp theo báo `25P02`, và sau `rollback`, dữ liệu trở về như cũ. `set local` giới hạn tham số trong một transaction: lab cho thấy sau `rollback`, `show statement_timeout` trả lại `0`.
+Nếu đang ở trong transaction, câu lệnh bị hủy làm hỏng cả transaction. Lab: câu tiếp theo báo `25P02`, và sau `rollback`, dữ liệu trở về như cũ. `set local` chỉ có tác dụng tới hết transaction hiện tại, dù commit hay không; `set` thường trong transaction thì mất khi `rollback`, nhưng sau `commit` giữ tới hết session[^pg-set]. Lab bước 9: sau `commit`, `show statement_timeout` trả `0` với `set local`, và `300ms` với `set` thường.
 
 **`lock_timeout`.** Chỉ tính thời gian chờ khóa, và tính riêng cho từng lần chờ[^pg-client-config]. Nó hữu ích khi câu lệnh chạy nhanh nhưng có thể bị chặn lâu, như `ALTER TABLE` (xem bài Locking). Nếu `statement_timeout` khác 0, đặt `lock_timeout` bằng hoặc lớn hơn là vô nghĩa, vì `statement_timeout` luôn tới trước[^pg-client-config].
 
@@ -136,12 +145,12 @@ Nếu đang ở trong transaction, câu lệnh bị hủy làm hỏng cả trans
 - **Chỉ đặt `query_timeout` ở client.** Dấu hiệu: API trả lỗi timeout, nhưng `pg_stat_activity` vẫn còn câu lệnh `active`, và database vẫn bận. Thêm `statement_timeout` để server tự dừng.
 - **Đặt `statement_timeout` trong `postgresql.conf` cho mọi session.** Tài liệu không khuyên làm vậy, vì nó ảnh hưởng mọi session[^pg-client-config]. Bài này suy ra dấu hiệu: migration hay báo cáo chạy lâu bị hủy với `57014`.
 - **Không xử lý lỗi `57014` trong transaction.** Dấu hiệu: câu sau báo `25P02: current transaction is aborted`. Code phải rollback rồi mới dùng lại kết nối.
-- **Dùng tiếp client sau khi session bị kết thúc.** Dấu hiệu trong lab: sự kiện `error` với `25P03` rồi `Connection terminated unexpectedly`, và câu tiếp theo báo `Client has encountered a connection error and is not queryable`. Client đang được mượn từ pool cũng vậy, và lỗi này không đi qua `pool.on('error')`: lab bước 8 cho thấy nếu không gắn `client.on('error')` trong lúc giữ client, tiến trình Node nhận `uncaughtException`.
+- **Dùng tiếp client sau khi session bị kết thúc.** Dấu hiệu trong lab: sự kiện `error` với `25P03` rồi `Connection terminated unexpectedly`, và câu tiếp theo báo `Client has encountered a connection error and is not queryable`. Với client đang được mượn từ pool, lỗi không đi qua `pool.on('error')`: lab bước 8, với `pg-pool` 3.14.0, cho thấy nếu không gắn `client.on('error')` trong lúc giữ client, tiến trình Node nhận `uncaughtException`.
 - **Không có timeout khi chờ kết nối.** `connectionTimeoutMillis` của pool mặc định 0, nên lời gọi có thể treo vô hạn khi pool hết client[^np-pool]. Dấu hiệu: request treo ở bước lấy kết nối, trong khi số client đang mượn đã chạm `max`.
 
 ## Ví dụ thực tế
 
-- [ex:lab-timeouts] — trên PostgreSQL 16.15, driver `pg` 8.16.3:
+- [ex:lab-timeouts] — trên PostgreSQL 16.15, Node.js v24.22.2, driver `pg` 8.16.3, `pg-pool` 3.14.0:
     - `statement_timeout = 300ms`, `pg_sleep(2)`: lỗi `57014` sau khoảng 300 ms; kết nối vẫn chạy được câu tiếp theo.
     - Trong transaction: sau `57014`, câu tiếp theo báo `25P02`; sau `rollback`, cột `v` vẫn là 0.
     - `lock_timeout = 300ms` khi dòng đang bị khóa: lỗi `55P03: canceling statement due to lock timeout`.
@@ -149,6 +158,7 @@ Nếu đang ở trong transaction, câu lệnh bị hủy làm hỏng cả trans
     - `query_timeout: 300`: client nhận `Query read timeout`; `pg_stat_activity` vẫn ghi `active` với `select pg_sleep(3)`; sau `pg_cancel_backend` thì `idle`.
     - Pool `max: 1`, `connectionTimeoutMillis: 300`: lần lấy thứ hai lỗi `timeout exceeded when trying to connect`.
     - Client đang mượn bị kết thúc vì nghỉ trong transaction: `pool.on('error')` không chạy, tiến trình nhận `uncaughtException` với `25P03`.
+    - `set local statement_timeout = '300ms'` rồi `commit`: `show statement_timeout` trả `0`; `set` thường rồi `commit`: trả `300ms`.
 
 ## Câu hỏi tự kiểm tra
 

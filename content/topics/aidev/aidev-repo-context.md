@@ -14,16 +14,16 @@ sources:
   - id: cc-memory
     url: https://code.claude.com/docs/en/memory
     title: "Claude Code Docs — How Claude remembers your project"
-    supports: "Mỗi session Claude Code bắt đầu với context window mới. CLAUDE.md là chỉ dẫn bạn viết, nạp vào đầu mỗi session; có thể đặt ở cấp project, user, tổ chức. File ở thư mục cha của thư mục làm việc nạp lúc khởi động, file ở thư mục con nạp khi cần. Claude coi chúng là context, không phải cấu hình bắt buộc. Nên giữ mỗi file dưới 200 dòng vì file dài tốn context và giảm mức tuân thủ; chỉ dẫn mâu thuẫn thì Claude có thể chọn tùy ý. Từ bản 2.1.277, Claude Code đọc AGENTS.md của repo; khi thư mục làm việc hoặc thư mục cha có CLAUDE.md hay CLAUDE.local.md thì mặc định chỉ đọc các file CLAUDE.md, muốn dùng chung thì thêm @AGENTS.md vào CLAUDE.md. Hai cơ chế mang kiến thức qua các session: CLAUDE.md và auto memory; auto memory do Claude tự ghi, bật mặc định ở session cục bộ, nằm riêng trên từng máy. Quy trình nhiều bước hoặc chỉ áp cho một phần codebase nên chuyển sang skill hoặc path-scoped rule. CLAUDE.md import được file khác bằng cú pháp @đường-dẫn. Trang này cũng liệt kê build commands, conventions, project layout là thứ nên ghi."
+    supports: "Mỗi session Claude Code bắt đầu với context window mới. CLAUDE.md là chỉ dẫn bạn viết, nạp vào đầu mỗi session; có thể đặt ở cấp project, user, tổ chức. File ở thư mục cha của thư mục làm việc nạp lúc khởi động, file ở thư mục con nạp khi cần. Claude coi chúng là context, không phải cấu hình bắt buộc. Nên giữ mỗi file dưới 200 dòng vì file dài tốn context và giảm mức tuân thủ; chỉ dẫn mâu thuẫn thì Claude có thể chọn tùy ý. Từ bản 2.1.277, Claude Code đọc AGENTS.md của repo; khi thư mục làm việc hoặc thư mục cha có CLAUDE.md hay CLAUDE.local.md thì mặc định chỉ đọc các file CLAUDE.md, muốn dùng chung thì thêm @AGENTS.md vào CLAUDE.md. Hai cơ chế mang kiến thức qua các session: CLAUDE.md và auto memory; auto memory do Claude tự ghi, bật mặc định ở session cục bộ, nằm riêng trên từng máy. Quy trình nhiều bước hoặc chỉ áp cho một phần codebase nên chuyển sang skill hoặc path-scoped rule. CLAUDE.md import được file khác bằng cú pháp @đường-dẫn; import giúp sắp xếp file dài nhưng không giảm context, vì file được import nạp cùng CLAUDE.md. Trang này cũng liệt kê build commands, conventions, project layout là thứ nên ghi."
     product: Claude Code
-    version: "tài liệu bản hiện hành, đọc 02/11/2026"
+    version: "tài liệu đọc 02/11/2026, khi bản mới nhất là 2.1.316"
     checkedAt: 2026-11-02
   - id: cc-best
     url: https://code.claude.com/docs/en/best-practices
     title: "Claude Code Docs — Best practices for Claude Code"
     supports: "Claude bắt đầu mỗi việc bằng cách đọc code và tìm được cấu trúc, quy ước, framework test; thứ nó không tìm được là thông tin không có trong repo. Phép thử trước khi ghi: nó có tìm được bằng cách đọc code không, và nó có thật sự đi tìm không; cả hai có thì bỏ. CLAUDE.md nên giữ ngắn: lệnh test, typecheck, lint chính xác và cách chạy một file test; chỗ code gây hiểu nhầm; quyết định không nằm trong repo; điều đã phải sửa hai lần. Prompt, CLAUDE.md, skill là chỉ dẫn không tất định; hook, deny rule, managed setting là tất định. Dòng bị bỏ qua thường vì file quá dài hoặc dòng đó là quy tắc không có ngoại lệ, khi đó nên dùng hook. Prompt hook và agent hook hỏi một model khác nên cũng không tất định; chỉ command hook và http hook mới tất định. Rule khớp lời gọi công cụ chứ không khớp ý định: deny rule đọc file không chặn được một script tự mở file đó; việc liên quan bảo mật nên có cả deny rule lẫn sandbox. Quy trình release dài nên đặt trong skill vì skill chỉ được đọc đủ khi cần. Bảng lời khuyên cũ xếp việc mô tả kiến trúc và file layout trong CLAUDE.md vào loại không còn cần."
     product: Claude Code
-    version: "tài liệu bản hiện hành, đọc 02/11/2026"
+    version: "tài liệu đọc 02/11/2026, khi bản mới nhất là 2.1.316"
     checkedAt: 2026-11-02
   - id: agents-md
     url: https://agents.md/
@@ -38,6 +38,13 @@ sources:
     supports: "File hướng dẫn của chính repo này: nơi đặt source, URL artifact, sáu bước release, quy tắc nội dung bắt buộc, việc rà soát hằng tuần."
     product: fullstack-mindmap
     version: "0.1.0"
+    checkedAt: 2026-11-02
+  - id: cc-changelog
+    url: https://code.claude.com/docs/en/changelog
+    title: "Claude Code Docs — Changelog"
+    supports: "Ngày 02/11/2026, mục mới nhất của trang là bản 2.1.316, ngày 31/10/2026."
+    product: Claude Code
+    version: "2.1.316"
     checkedAt: 2026-11-02
 examples:
   - id: agents-md-openai
@@ -55,6 +62,8 @@ changelog:
     note: "Claude soạn bài từ tài liệu Claude Code, trang AGENTS.md và CLAUDE.md của repo này."
   - date: 2026-11-02
     note: "Phản biện vòng 1: sửa cách Claude Code đọc AGENTS.md theo phiên bản và điều kiện của nguồn; thêm auto memory, skill, path-scoped rule, import; giới hạn của deny rule và sandbox; ghi ngày đọc tài liệu; nêu chỗ hai trang tài liệu khác nhau; khai báo ví dụ của trang AGENTS.md."
+  - date: 2026-11-02
+    note: "Phản biện vòng 2: tách import khỏi các cách làm file ngắn, vì import không giảm context; ghi bản Claude Code mới nhất ở ngày đọc, thêm nguồn changelog."
 ---
 
 ## Vấn đề cần giải quyết
@@ -67,7 +76,7 @@ Thiếu những thứ đó, agent có thể làm khác điều bạn muốn, ho�
 
 ## Cơ chế và luồng hoạt động
 
-Các hành vi của Claude Code trong bài theo tài liệu đọc ngày 02/11/2026; công cụ này đổi nhanh, nên kiểm lại trên phiên bản bạn dùng.
+Các hành vi của Claude Code trong bài theo tài liệu đọc ngày 02/11/2026, khi bản mới nhất là 2.1.316[^cc-changelog]; công cụ này đổi nhanh, nên kiểm lại trên phiên bản bạn dùng.
 
 **Hai dạng file phổ biến.**
 
@@ -96,11 +105,12 @@ Trang AGENTS.md gợi ý thêm tổng quan dự án, quy ước code, hướng d
 
 Hook là script chạy ở các điểm cố định trong vòng làm việc của agent, deny rule là luật chặn một lời gọi công cụ, và skill là quy trình lưu riêng. `prompt` hook và `agent` hook hỏi một model khác, nên không tất định[^cc-best]. Quy tắc không có ngoại lệ thì đặt ở loại thứ hai[^cc-best]. Các kiểm tra chạy thật được bàn ở bài Test làm lưới an toàn.
 
-**Giữ file ngắn.** Mỗi dòng tốn một phần sự chú ý ở mọi việc, dù có liên quan hay không[^cc-best]. Claude Code khuyên giữ mỗi file dưới 200 dòng, vì file dài tốn context và giảm mức tuân thủ[^cc-memory]. Có ba cách để file ngắn lại:
+**Giữ file ngắn.** Mỗi dòng tốn một phần sự chú ý ở mọi việc, dù có liên quan hay không[^cc-best]. Claude Code khuyên giữ mỗi file dưới 200 dòng, vì file dài tốn context và giảm mức tuân thủ[^cc-memory]. Có hai cách để file ngắn lại:
 
 - Quy trình nhiều bước, như release, chuyển sang skill: Claude chỉ đọc đủ file đó khi việc cần tới[^cc-best][^cc-memory].
 - Chỉ dẫn chỉ áp cho một phần codebase chuyển sang path-scoped rule: nó chỉ nạp khi làm với file khớp[^cc-memory].
-- Tài liệu đã có thì trỏ tới bằng import, ví dụ `@README`, thay vì chép lại[^cc-memory].
+
+Import bằng cú pháp `@đường-dẫn` giúp sắp xếp file dài, nhưng không giảm context, vì file được import nạp cùng `CLAUDE.md`[^cc-memory].
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 

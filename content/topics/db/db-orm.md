@@ -45,6 +45,8 @@ changelog:
     note: "Claude soạn bài từ tài liệu TypeORM 1.x và chạy thử nghiệm với TypeORM 1.1.2 trên PostgreSQL 16.15 trong Docker."
   - date: 2026-11-02
     note: "Phản biện vòng 1: tách rõ kết quả đếm giữa getRawMany và count(); thêm vào lab save() mảng, count(), cột int8 với hai cách khai báo; sửa lỗi về save() hàng loạt; bỏ ý không có căn cứ về update(); ghi các khuyến nghị là của bài; dùng đúng tên bài liên quan."
+  - date: 2026-11-02
+    note: "Phản biện vòng 2: ghi danh sách đổi kiểu và số câu SQL của save(), update() là kết quả lab, kèm phiên bản."
 ---
 
 ## Vấn đề cần giải quyết
@@ -55,7 +57,7 @@ Cái giá là SQL trở nên khuất tầm mắt. Một dòng code có thể sin
 
 ## Cơ chế và luồng hoạt động
 
-**Ánh xạ.** Một entity khai báo bảng, các cột và quan hệ. TypeORM gọi xuống driver, và thêm một lớp đổi kiểu của riêng nó, nên kết quả có thể khác bài Driver và client:
+**Ánh xạ.** Một entity khai báo bảng, các cột và quan hệ. TypeORM gọi xuống driver, và thêm một lớp đổi kiểu của riêng nó, nên kết quả có thể khác bài Driver và client. Lab với TypeORM 1.1.2, `pg` 8.16.3 cho thấy:
 
 - Đọc `count(*)` thô qua QueryBuilder, tức bộ dựng câu truy vấn bằng code, với `getRawMany()`: `"2"` dạng chuỗi, như driver trả.
 - `repository.count()` và `getCount()`: `number`.
@@ -101,7 +103,7 @@ Trong output, `SELECT` nằm ngoài transaction, và khi không có gì đổi t
 
 - **SQL khuất tầm mắt.** Một vòng lặp vô hại trong code thành 11 câu SQL.
 - **Lấy mọi cột.** `findOneBy` trong lab liệt kê mọi cột của entity. Với cột lớn, dùng tùy chọn `select` để chỉ lấy thuộc tính cần[^typeorm-find].
-- **Đọc trước khi ghi.** `save()` tốn thêm một `SELECT`; `update()` chỉ một câu `UPDATE`[^typeorm-repo].
+- **Đọc trước khi ghi.** Lab: `save()` tốn thêm một `SELECT`; `update()` chỉ một câu `UPDATE`.
 - **Truy vấn phức tạp** (khuyến nghị của bài). Báo cáo gộp nhóm, truy vấn nhiều join hay cần tối ưu theo kế hoạch thực thi thường dễ viết và dễ đọc hơn bằng SQL.
 
 **Khi nào không nên dùng ORM cho một thao tác** (khuyến nghị của bài). Khi cần kiểm soát chính xác SQL: báo cáo, cập nhật hàng loạt, truy vấn đã tối ưu bằng `EXPLAIN`. Dùng QueryBuilder hoặc SQL thô cho riêng các chỗ đó; ORM và SQL thô cùng tồn tại trong một dự án được, như lab bước 9 và 10.

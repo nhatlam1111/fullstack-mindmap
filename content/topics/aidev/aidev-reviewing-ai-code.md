@@ -43,7 +43,14 @@ sources:
     title: "Claude Code Docs — Best practices for Claude Code"
     supports: "Claude dừng khi việc trông có vẻ xong. /code-review xem diff trong một subagent mới, chưa thấy cuộc trò chuyện, nên không bị lý luận đã tạo ra code ảnh hưởng. Hãy đòi bằng chứng: lệnh đã chạy và output của nó; câu 'mọi test đều pass' tự nó nói rất ít. Có thể viết prompt review đối chiếu diff với SPEC.md. Người review được yêu cầu tìm lỗi sẽ luôn tìm ra thứ gì đó; sửa mọi phát hiện thì thêm lớp trừu tượng và test cho trường hợp không thể xảy ra."
     product: Claude Code
-    version: "tài liệu bản hiện hành, đọc 02/11/2026"
+    version: "tài liệu đọc 02/11/2026, khi bản mới nhất là 2.1.316"
+    checkedAt: 2026-11-02
+  - id: cc-changelog
+    url: https://code.claude.com/docs/en/changelog
+    title: "Claude Code Docs — Changelog"
+    supports: "Ngày 02/11/2026, mục mới nhất của trang là bản 2.1.316, ngày 31/10/2026."
+    product: Claude Code
+    version: "2.1.316"
     checkedAt: 2026-11-02
 examples:
   - id: perry-study
@@ -58,9 +65,11 @@ examples:
     checkedAt: 2026-11-02
 changelog:
   - date: 2026-11-02
-    note: "Claude soạn bài từ GitHub Docs, Google Engineering Practices, tài liệu Claude Code và nghiên cứu Perry và cộng sự."
+    note: "Claude soạn bài từ GitHub Docs, Google Engineering Practices, tài liệu Claude Code và phần tóm tắt của nghiên cứu Perry và cộng sự."
   - date: 2026-11-02
     note: "Phản biện vòng 1: đọc toàn văn nghiên cứu Perry và ghi cỡ mẫu, số tác vụ, giới hạn do tác giả nêu; tách suy luận của bài khỏi nguồn; ghi điều kiện và ngày đọc cho /code-review; thêm nguồn Small CLs và slopsquatting; chuyển ops-code-review từ prerequisites sang related."
+  - date: 2026-11-02
+    note: "Phản biện vòng 2: ghi bản Claude Code mới nhất ở ngày đọc, thêm nguồn changelog; trả dòng soạn bài về nguyên văn."
 ---
 
 ## Vấn đề cần giải quyết
@@ -82,7 +91,7 @@ GitHub khuyên hoài nghi những đoạn code trông đúng nhưng không khớ
 5. **Tìm lỗi đặc trưng của AI.** API bịa ra, ràng buộc bị bỏ qua, logic sai[^gh-review-ai].
 6. **Đọc mọi dòng còn lại**, như với diff của đồng nghiệp[^google-review].
 
-**Người không viết code thì nhìn khách quan hơn.** Tài liệu Claude Code (đọc ngày 02/11/2026) mô tả lệnh `/code-review` trong terminal: nó xem diff trong một subagent mới, chưa thấy cuộc trò chuyện, nên không bị lý luận đã tạo ra code ảnh hưởng[^cc-best]. Cách này hỗ trợ người review, không thay người review.
+**Người không viết code thì nhìn khách quan hơn.** Tài liệu Claude Code (đọc ngày 02/11/2026, khi bản mới nhất là 2.1.316[^cc-changelog]) mô tả lệnh `/code-review` trong terminal: nó xem diff trong một subagent mới, chưa thấy cuộc trò chuyện, nên không bị lý luận đã tạo ra code ảnh hưởng[^cc-best]. Cách này hỗ trợ người review, không thay người review.
 
 ## Điều kiện áp dụng, lợi ích và đánh đổi
 

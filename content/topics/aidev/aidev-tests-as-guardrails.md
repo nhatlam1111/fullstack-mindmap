@@ -18,7 +18,7 @@ sources:
     title: "Claude Code Docs — Best practices for Claude Code"
     supports: "Claude dừng khi việc trông có vẻ xong; không có gì để chạy thì 'trông có vẻ xong' là tất cả, và bạn trở thành bộ test. Hãy cho nó thứ chạy được và trả về pass hoặc fail: nó sửa, chạy kiểm tra, đọc output rồi sửa tiếp. Ví dụ prompt: viết một test fail tái hiện lỗi rồi mới sửa. Bảng phân loại: khi nào xong có dạng không tất định là yêu cầu bằng chứng, /goal, /code-review; dạng tất định là test, typecheck, Stop hook, CI. Stop hook chạy script khi Claude định kết thúc lượt và đưa Claude quay lại làm tiếp nếu script thoát với mã 2; ví dụ typecheck. Nếu hook chặn tám lần liên tiếp mà không có lời gọi công cụ nào ở giữa, Claude Code bỏ qua lần chặn tiếp theo và kết thúc lượt. /goal đặt một điều kiện mà một model riêng kiểm sau mỗi lượt. Hãy đòi bằng chứng là lệnh đã chạy và output."
     product: Claude Code
-    version: "tài liệu bản hiện hành, đọc 02/11/2026"
+    version: "tài liệu đọc 02/11/2026, khi bản mới nhất là 2.1.316"
     checkedAt: 2026-11-02
   - id: gh-review-ai
     url: https://docs.github.com/en/copilot/tutorials/review-ai-generated-code
@@ -47,6 +47,13 @@ sources:
     product: fullstack-mindmap
     version: "0.1.0"
     checkedAt: 2026-11-02
+  - id: cc-changelog
+    url: https://code.claude.com/docs/en/changelog
+    title: "Claude Code Docs — Changelog"
+    supports: "Ngày 02/11/2026, mục mới nhất của trang là bản 2.1.316, ngày 31/10/2026."
+    product: Claude Code
+    version: "2.1.316"
+    checkedAt: 2026-11-02
 examples:
   - id: this-repo-release
     kind: official-doc
@@ -68,11 +75,13 @@ changelog:
     note: "Claude soạn bài từ tài liệu Claude Code, GitHub Docs, Google Engineering Practices và scripts/release.ts của repo này."
   - date: 2026-11-02
     note: "Phản biện vòng 1: viết lại ví dụ release, nêu rõ không publish vẫn là chỉ dẫn và thêm ví dụ tất định là workflow Pages; ghi giới hạn tám lần chặn của Stop hook; test chỉ tất định khi gắn vào hook hoặc CI; ghi ngày đọc tài liệu; đánh dấu các ý là kinh nghiệm của bài; sửa tên bài liên quan."
+  - date: 2026-11-02
+    note: "Phản biện vòng 2: ghi bản Claude Code mới nhất ở ngày đọc, thêm nguồn changelog."
 ---
 
 ## Vấn đề cần giải quyết
 
-Tài liệu Claude Code (đọc ngày 02/11/2026) viết rằng Claude dừng khi việc trông có vẻ xong. Nếu không có gì để chạy và cho biết việc đã xong thật chưa, thì "trông có vẻ xong" là tất cả những gì nó có. Hệ quả được mô tả rất thẳng: bạn trở thành bộ test, và mỗi lỗi nằm đó cho tới khi bạn tình cờ nhận ra[^cc-best].
+Tài liệu Claude Code (đọc ngày 02/11/2026, khi bản mới nhất là 2.1.316[^cc-changelog]) viết rằng Claude dừng khi việc trông có vẻ xong. Nếu không có gì để chạy và cho biết việc đã xong thật chưa, thì "trông có vẻ xong" là tất cả những gì nó có. Hệ quả được mô tả rất thẳng: bạn trở thành bộ test, và mỗi lỗi nằm đó cho tới khi bạn tình cờ nhận ra[^cc-best].
 
 Test đổi chuyện đó. Thay vì đọc để đoán xem code có đúng không, bạn có một thứ trả lời pass hoặc fail mà agent tự chạy được.
 
