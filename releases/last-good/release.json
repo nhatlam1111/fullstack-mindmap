@@ -1,46 +1,45 @@
 {
-  "builtAt": "2026-10-29T07:45:44.303Z",
+  "builtAt": "2026-11-02T03:06:42.832Z",
   "topics": {
     "skeleton": 152,
-    "verified": 19,
-    "draft": 5
+    "verified": 24
   },
-  "artifactBytes": 1939043,
+  "artifactBytes": 1960192,
   "steps": [
     {
       "step": "Biên dịch nội dung",
       "ok": true,
-      "ms": 6744
+      "ms": 50327
     },
     {
       "step": "Typecheck",
       "ok": true,
-      "ms": 8667
+      "ms": 19020
     },
     {
       "step": "Lint",
       "ok": true,
-      "ms": 7654
+      "ms": 36983
     },
     {
       "step": "Kiểm tra nội dung",
       "ok": true,
-      "ms": 5643
+      "ms": 5234
     },
     {
       "step": "Unit test",
       "ok": true,
-      "ms": 7882
+      "ms": 13413
     },
     {
       "step": "Build",
       "ok": true,
-      "ms": 14230
+      "ms": 10471
     },
     {
       "step": "Test end-to-end",
       "ok": true,
-      "ms": 19311
+      "ms": 36246
     }
   ]
 }
